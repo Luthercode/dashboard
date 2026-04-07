@@ -1,18 +1,8 @@
 // Service Worker para PWA — cache básico
-const CACHE_NAME = 'dashboard-fin-v1';
-const ASSETS = [
-    '/',
-    '/index.html',
-    '/dashboard.html',
-    '/config.js',
-    '/manifest.json',
-];
+const CACHE_NAME = 'dashboard-fin-v2';
 
-// Instalar — cacheia ativos estáticos
+// Instalar — não depende de cache pré-definido
 self.addEventListener('install', (event) => {
-    event.waitUntil(
-        caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
-    );
     self.skipWaiting();
 });
 

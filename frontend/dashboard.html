@@ -389,6 +389,7 @@
             headers: { ...apiHeaders(), ...(options.headers || {}) },
         });
         if (res.status === 401) {
+            console.error('401 em', path, '— token pode estar expirado');
             localStorage.clear();
             window.location.href = 'index.html';
             return;
