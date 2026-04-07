@@ -235,7 +235,7 @@ def save_layout(body: LayoutSave, user_id: str = Depends(get_current_user_id)):
 
 # ── Health Check ─────────────────────────────────────────────────────────────
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def health():
     return {"status": "ok", "service": "Dashboard Financeiro API"}
 
