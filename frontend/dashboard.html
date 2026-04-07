@@ -389,9 +389,21 @@
             headers: { ...apiHeaders(), ...(options.headers || {}) },
         });
         if (res.status === 401) {
-            console.error('401 em', path, '— token pode estar expirado');
-            localStorage.clear();
-            window.location.href = 'index.html';
+            const err = await res.json().catch(() => ({}));
+            console.error('401 em', path, '—', JSON.stringify(err));
+            // Tenta debug do token
+            try {
+                const debug = await fetch(APP_CONFIG.API_URL + '/debug-token', {
+                    headers: apiHeaders(),
+                });
+                const debugData = await debug.json();
+                console.error('Debug token:', JSON.stringify(debugData));
+            } catch(e) {}
+            showToast('Sessão expirada. Faça login novamente.', 'danger');
+            setTimeout(() => {
+                localStorage.clear();
+                window.location.href = 'index.html';
+            }, 3000);
             return;
         }
         if (!res.ok) {

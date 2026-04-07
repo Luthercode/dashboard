@@ -58,18 +58,30 @@ def get_current_user_id(authorization: str = Header(...)) -> str:
     """Extrai e valida o user_id a partir do token JWT do Supabase."""
     token = authorization.replace("Bearer ", "") if authorization.startswith("Bearer ") else authorization
     try:
-        payload = jwt.decode(
-            token,
-            SUPABASE_JWT_SECRET,
-            algorithms=["HS256"],
-            audience="authenticated",
-        )
+        # Tenta com audience primeiro, depois sem (compatibilidade Supabase)
+        payload = None
+        for options in [{"audience": "authenticated"}, {}]:
+            try:
+                payload = jwt.decode(
+                    token,
+                    SUPABASE_JWT_SECRET,
+                    algorithms=["HS256"],
+                    options={"verify_aud": bool(options)},
+                    **options,
+                )
+                break
+            except JWTError:
+                continue
+
+        if payload is None:
+            raise JWTError("Falha na decodificação")
+
         user_id = payload.get("sub")
         if not user_id:
             raise HTTPException(status_code=401, detail="Token inválido: sem sub")
         return user_id
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Token inválido ou expirado")
+    except JWTError as e:
+        raise HTTPException(status_code=401, detail=f"Token inválido: {str(e)}")
 
 # ── Endpoints de Autenticação ────────────────────────────────────────────────
 
@@ -232,6 +244,25 @@ def save_layout(body: LayoutSave, user_id: str = Depends(get_current_user_id)):
     if not res.data:
         raise HTTPException(status_code=500, detail="Erro ao salvar layout")
     return res.data[0]
+
+# ── Debug: Testar token (remover em produção) ───────────────────────────────
+
+@app.get("/debug-token")
+def debug_token(authorization: str = Header(...)):
+    """Endpoint temporário para debugar problemas com JWT."""
+    token = authorization.replace("Bearer ", "") if authorization.startswith("Bearer ") else authorization
+    # Decodifica SEM verificar para ver o conteúdo
+    try:
+        unverified = jwt.get_unverified_claims(token)
+    except Exception as e:
+        return {"error": f"Token malformado: {str(e)}"}
+
+    # Tenta verificar
+    try:
+        verified = jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"], options={"verify_aud": False})
+        return {"status": "valid", "claims": verified}
+    except JWTError as e:
+        return {"status": "invalid", "reason": str(e), "unverified_claims": unverified}
 
 # ── Health Check ─────────────────────────────────────────────────────────────
 
