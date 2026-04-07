@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Financeiro</title>
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+        [data-bs-theme="dark"] {
+            --bg: #111827;
+            --card-bg: #1f2937;
+            --text: #f9fafb;
+            --text-muted: #9ca3af;
+            --border: #374151;
+        }
+        * { box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            transition: background 0.3s, color 0.3s;
+        }
+        /* Navbar */
+        .navbar-custom {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem 1rem;
+        }
+        .navbar-brand-text { font-weight: 700; color: var(--primary); font-size: 1.2rem; }
+        .user-email { color: var(--text-muted); font-size: 0.85rem; }
+
+        /* Cards */
+        .dash-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.25rem;
+            transition: box-shadow 0.2s, background 0.3s;
+        }
+        .dash-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+        .dash-card h6 { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
+        .dash-card .big-number { font-size: 1.8rem; font-weight: 700; }
+        .text-renda { color: var(--success); }
+        .text-gasto { color: var(--danger); }
+        .text-saldo { color: var(--primary); }
+
+        /* Tabela */
+        .table-transactions { font-size: 0.9rem; }
+        .table-transactions th { font-weight: 600; color: var(--text-muted); border-bottom-width: 1px; }
+        .badge-renda { background: #d1fae5; color: #065f46; }
+        .badge-gasto { background: #fee2e2; color: #991b1b; }
+        [data-bs-theme="dark"] .badge-renda { background: #065f46; color: #d1fae5; }
+        [data-bs-theme="dark"] .badge-gasto { background: #991b1b; color: #fee2e2; }
+
+        /* Modal */
+        .modal-content { border-radius: 14px; background: var(--card-bg); color: var(--text); }
+        .form-control, .form-select {
+            background: var(--bg);
+            color: var(--text);
+            border-color: var(--border);
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.2rem rgba(79,70,229,0.15);
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        /* Botões */
+        .btn-primary { background: var(--primary); border-color: var(--primary); border-radius: 10px; font-weight: 600; }
+        .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+        .btn-outline-secondary { border-radius: 10px; }
+
+        /* Widget drag handle */
+        .widget-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        .widget-header .drag-handle {
+            cursor: grab;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Skeleton loading */
+        .skeleton {
+            background: linear-gradient(90deg, var(--border) 25%, transparent 50%, var(--border) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+            height: 1.5rem;
+        }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        /* Responsividade extra */
+        @media (max-width: 576px) {
+            .dash-card .big-number { font-size: 1.4rem; }
+            .dash-card { padding: 1rem; }
+        }
+
+        /* Toast container */
+        .toast-container { z-index: 1080; }
+
+        /* Personalização - painel */
+        .customize-panel {
+            position: fixed;
+            top: 0; right: -360px;
+            width: 340px; max-width: 90vw;
+            height: 100vh;
+            background: var(--card-bg);
+            border-left: 1px solid var(--border);
+            z-index: 1060;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+            padding: 1.5rem;
+            box-shadow: -4px 0 20px rgba(0,0,0,0.1);
+        }
+        .customize-panel.open { right: 0; }
+        .customize-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 1055;
+            display: none;
+        }
+        .customize-overlay.open { display: block; }
+
+        .widget-sort-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+            cursor: grab;
+        }
+        .widget-sort-item:active { cursor: grabbing; }
+        .widget-sort-item .bi { font-size: 1.2rem; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <!-- ─── Navbar ────────────────────────────────────────────── -->
+    <nav class="navbar-custom d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <span style="font-size:1.5rem">💰</span>
+            <span class="navbar-brand-text">Dashboard Financeiro</span>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="user-email d-none d-sm-inline" id="userEmail"></span>
+            <button class="btn btn-sm btn-outline-secondary" onclick="openCustomize()" title="Personalizar">
+                <i class="bi bi-gear"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="logout()" title="Sair">
+                <i class="bi bi-box-arrow-right"></i> Sair
+            </button>
+        </div>
+    </nav>
+
+    <!-- ─── Conteúdo Principal ────────────────────────────────── -->
+    <div class="container-fluid py-3 px-3 px-md-4" id="dashboardContainer">
+        <!-- Linha de Resumo -->
+        <div class="row g-3 mb-3" id="summaryRow">
+            <div class="col-12 col-sm-4" id="widget-saldo">
+                <div class="dash-card text-center">
+                    <h6><i class="bi bi-wallet2"></i> Saldo Total</h6>
+                    <div class="big-number text-saldo" id="saldoValor">
+                        <div class="skeleton mx-auto" style="width:60%;height:2rem"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-4" id="widget-renda-total">
+                <div class="dash-card text-center">
+                    <h6><i class="bi bi-arrow-up-circle"></i> Total Rendas</h6>
+                    <div class="big-number text-renda" id="rendaValor">
+                        <div class="skeleton mx-auto" style="width:60%;height:2rem"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-4" id="widget-gasto-total">
+                <div class="dash-card text-center">
+                    <h6><i class="bi bi-arrow-down-circle"></i> Total Gastos</h6>
+                    <div class="big-number text-gasto" id="gastoValor">
+                        <div class="skeleton mx-auto" style="width:60%;height:2rem"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="row g-3 mb-3" id="chartsRow">
+            <div class="col-12 col-md-6" id="widget-grafico_pizza">
+                <div class="dash-card">
+                    <div class="widget-header">
+                        <h6 class="mb-0"><i class="bi bi-pie-chart"></i> Renda vs Gasto</h6>
+                    </div>
+                    <canvas id="chartPizza" height="260"></canvas>
+                </div>
+            </div>
+            <div class="col-12 col-md-6" id="widget-grafico_linha">
+                <div class="dash-card">
+                    <div class="widget-header">
+                        <h6 class="mb-0"><i class="bi bi-graph-up"></i> Evolução Mensal</h6>
+                    </div>
+                    <canvas id="chartLinha" height="260"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transações -->
+        <div class="row g-3" id="transactionsRow">
+            <div class="col-12" id="widget-transacoes">
+                <div class="dash-card">
+                    <div class="widget-header">
+                        <h6 class="mb-0"><i class="bi bi-list-ul"></i> Transações</h6>
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalTransaction">
+                            <i class="bi bi-plus-lg"></i> Nova
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-transactions align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Descrição</th>
+                                    <th>Tipo</th>
+                                    <th class="text-end">Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionsBody">
+                                <tr>
+                                    <td colspan="4" class="text-center py-4">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                        <span class="ms-2">Carregando…</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-center text-muted mt-3 d-none" id="emptyState">
+                        <i class="bi bi-inbox" style="font-size:2rem"></i><br>
+                        Nenhuma transação ainda. Clique em <strong>+ Nova</strong> para começar!
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Modal: Nova Transação ─────────────────────────────── -->
+    <div class="modal fade" id="modalTransaction" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold">Nova Transação</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="transactionForm" novalidate>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Tipo</label>
+                            <select class="form-select" id="txTipo" required>
+                                <option value="renda">💰 Renda</option>
+                                <option value="gasto">💸 Gasto</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Valor (R$)</label>
+                            <input type="number" class="form-control" id="txValor" min="0.01" step="0.01" placeholder="0,00" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Descrição</label>
+                            <input type="text" class="form-control" id="txDescricao" maxlength="200" placeholder="Ex: Salário, Aluguel…" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Data</label>
+                            <input type="date" class="form-control" id="txData" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" id="txSubmitBtn">
+                            <span id="txBtnText">Salvar</span>
+                            <span id="txBtnSpinner" class="spinner-border spinner-border-sm d-none ms-2" role="status"></span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Painel de Personalização ──────────────────────────── -->
+    <div class="customize-overlay" id="customizeOverlay" onclick="closeCustomize()"></div>
+    <div class="customize-panel" id="customizePanel">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="fw-bold mb-0"><i class="bi bi-palette"></i> Personalizar</h5>
+            <button class="btn btn-sm btn-outline-secondary" onclick="closeCustomize()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- Tema -->
+        <div class="mb-4">
+            <label class="form-label fw-semibold">Tema</label>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-secondary flex-fill" id="btnThemeLight" onclick="setTheme('light')">
+                    <i class="bi bi-sun"></i> Claro
+                </button>
+                <button class="btn btn-sm btn-outline-secondary flex-fill" id="btnThemeDark" onclick="setTheme('dark')">
+                    <i class="bi bi-moon-stars"></i> Escuro
+                </button>
+            </div>
+        </div>
+
+        <!-- Ordem dos Widgets -->
+        <div class="mb-4">
+            <label class="form-label fw-semibold">Ordem dos Widgets</label>
+            <p class="text-muted" style="font-size:0.8rem">Arraste para reordenar</p>
+            <div id="widgetSortList"></div>
+        </div>
+
+        <button class="btn btn-primary w-100" onclick="saveLayoutNow()">
+            <i class="bi bi-check-lg"></i> Salvar Layout
+        </button>
+        <div id="layoutSaveStatus" class="text-center mt-2" style="font-size:0.85rem"></div>
+    </div>
+
+    <!-- ─── Toast ────────────────────────────────────────────── -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="appToast" class="toast align-items-center border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body" id="toastBody"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="config.js"></script>
+    <script>
+    // ═══════════════════════════════════════════════════════════════════
+    //  ESTADO GLOBAL
+    // ═══════════════════════════════════════════════════════════════════
+    const TOKEN = localStorage.getItem('access_token');
+    const USER_EMAIL = localStorage.getItem('user_email');
+
+    // Redireciona se não autenticado
+    if (!TOKEN) { window.location.href = 'index.html'; }
+
+    document.getElementById('userEmail').textContent = USER_EMAIL || '';
+
+    let currentLayout = null;
+    let chartPizzaInstance = null;
+    let chartLinhaInstance = null;
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  UTILITÁRIOS
+    // ═══════════════════════════════════════════════════════════════════
+
+    function apiHeaders() {
+        return {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + TOKEN,
+        };
+    }
+
+    async function apiFetch(path, options = {}) {
+        const res = await fetch(APP_CONFIG.API_URL + path, {
+            ...options,
+            headers: { ...apiHeaders(), ...(options.headers || {}) },
+        });
+        if (res.status === 401) {
+            localStorage.clear();
+            window.location.href = 'index.html';
+            return;
+        }
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || 'Erro na requisição');
+        }
+        return res.json();
+    }
+
+    function formatBRL(value) {
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    }
+
+    function formatDate(dateStr) {
+        const [y, m, d] = dateStr.split('-');
+        return `${d}/${m}/${y}`;
+    }
+
+    function showToast(msg, type = 'success') {
+        const toast = document.getElementById('appToast');
+        const body = document.getElementById('toastBody');
+        toast.className = `toast align-items-center border-0 text-bg-${type}`;
+        body.textContent = msg;
+        bootstrap.Toast.getOrCreateInstance(toast).show();
+    }
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = 'index.html';
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  CARREGAR DADOS
+    // ═══════════════════════════════════════════════════════════════════
+
+    async function loadDashboard() {
+        try {
+            // Busca tudo em paralelo
+            const [summary, transactions, layoutData] = await Promise.all([
+                apiFetch('/summary'),
+                apiFetch('/transactions'),
+                apiFetch('/layout'),
+            ]);
+
+            renderSummary(summary);
+            renderTransactions(transactions);
+            renderChartPizza(summary);
+            renderChartLinha(summary.evolucao);
+
+            // Layout
+            currentLayout = layoutData.layout || layoutData;
+            applyLayout(currentLayout);
+
+        } catch (err) {
+            showToast('Erro ao carregar dados: ' + err.message, 'danger');
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  RENDERIZAÇÃO
+    // ═══════════════════════════════════════════════════════════════════
+
+    function renderSummary(data) {
+        document.getElementById('saldoValor').textContent = formatBRL(data.saldo);
+        document.getElementById('rendaValor').textContent = formatBRL(data.total_renda);
+        document.getElementById('gastoValor').textContent = formatBRL(data.total_gasto);
+    }
+
+    function renderTransactions(list) {
+        const tbody = document.getElementById('transactionsBody');
+        const empty = document.getElementById('emptyState');
+
+        if (!list.length) {
+            tbody.innerHTML = '';
+            empty.classList.remove('d-none');
+            return;
+        }
+
+        empty.classList.add('d-none');
+        tbody.innerHTML = list.map(t => `
+            <tr>
+                <td>${formatDate(t.data)}</td>
+                <td>${escapeHtml(t.descricao)}</td>
+                <td><span class="badge badge-${t.tipo}">${t.tipo === 'renda' ? '↑ Renda' : '↓ Gasto'}</span></td>
+                <td class="text-end fw-semibold ${t.tipo === 'renda' ? 'text-renda' : 'text-gasto'}">${formatBRL(t.valor)}</td>
+            </tr>
+        `).join('');
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    // ── Gráficos ────────────────────────────────────────────────────
+
+    function getChartColors() {
+        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        return {
+            text: isDark ? '#f9fafb' : '#1f2937',
+            grid: isDark ? '#374151' : '#e5e7eb',
+        };
+    }
+
+    function renderChartPizza(summary) {
+        const ctx = document.getElementById('chartPizza').getContext('2d');
+        const colors = getChartColors();
+
+        if (chartPizzaInstance) chartPizzaInstance.destroy();
+        chartPizzaInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Rendas', 'Gastos'],
+                datasets: [{
+                    data: [summary.total_renda, summary.total_gasto],
+                    backgroundColor: ['#10b981', '#ef4444'],
+                    borderWidth: 0,
+                    hoverOffset: 8,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: colors.text, padding: 16, font: { size: 13 } },
+                    },
+                },
+            },
+        });
+    }
+
+    function renderChartLinha(evolucao) {
+        const ctx = document.getElementById('chartLinha').getContext('2d');
+        const colors = getChartColors();
+        const labels = evolucao.map(e => e.mes);
+        const rendas = evolucao.map(e => e.renda);
+        const gastos = evolucao.map(e => e.gasto);
+
+        if (chartLinhaInstance) chartLinhaInstance.destroy();
+        chartLinhaInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Rendas',
+                        data: rendas,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16,185,129,0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                    },
+                    {
+                        label: 'Gastos',
+                        data: gastos,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239,68,68,0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { ticks: { color: colors.text }, grid: { color: colors.grid } },
+                    y: {
+                        ticks: {
+                            color: colors.text,
+                            callback: v => formatBRL(v),
+                        },
+                        grid: { color: colors.grid },
+                    },
+                },
+                plugins: {
+                    legend: {
+                        labels: { color: colors.text, padding: 16, font: { size: 13 } },
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `${ctx.dataset.label}: ${formatBRL(ctx.parsed.y)}`,
+                        },
+                    },
+                },
+            },
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  NOVA TRANSAÇÃO
+    // ═══════════════════════════════════════════════════════════════════
+
+    // Seta data padrão como hoje
+    document.getElementById('txData').value = new Date().toISOString().slice(0, 10);
+
+    document.getElementById('transactionForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('txSubmitBtn');
+        const spinner = document.getElementById('txBtnSpinner');
+        btn.disabled = true;
+        spinner.classList.remove('d-none');
+
+        const body = {
+            tipo: document.getElementById('txTipo').value,
+            valor: parseFloat(document.getElementById('txValor').value),
+            descricao: document.getElementById('txDescricao').value.trim(),
+            data: document.getElementById('txData').value,
+        };
+
+        if (!body.descricao || !body.valor || !body.data) {
+            showToast('Preencha todos os campos.', 'warning');
+            btn.disabled = false;
+            spinner.classList.add('d-none');
+            return;
+        }
+
+        try {
+            await apiFetch('/transactions', {
+                method: 'POST',
+                body: JSON.stringify(body),
+            });
+
+            showToast('Transação salva com sucesso!', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('modalTransaction')).hide();
+            document.getElementById('transactionForm').reset();
+            document.getElementById('txData').value = new Date().toISOString().slice(0, 10);
+
+            // Recarrega dados
+            loadDashboard();
+        } catch (err) {
+            showToast('Erro: ' + err.message, 'danger');
+        } finally {
+            btn.disabled = false;
+            spinner.classList.add('d-none');
+        }
+    });
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  LAYOUT / PERSONALIZAÇÃO
+    // ═══════════════════════════════════════════════════════════════════
+
+    const WIDGET_LABELS = {
+        'saldo': '💰 Resumo (Saldo)',
+        'grafico_pizza': '🥧 Gráfico Pizza',
+        'grafico_linha': '📈 Gráfico Linha',
+        'transacoes': '📋 Transações',
+    };
+
+    function applyLayout(layout) {
+        if (!layout) return;
+
+        // Tema
+        const theme = layout.tema || 'light';
+        setTheme(theme, false);
+
+        // Ordem dos widgets — reorganiza as linhas do grid
+        if (layout.widgets && layout.widgets.length) {
+            const container = document.getElementById('dashboardContainer');
+            const widgetOrder = layout.widgets.map(w => w.id);
+
+            // Mapeia widget id → elemento container (row)
+            const widgetToRow = {
+                'saldo': 'summaryRow',
+                'grafico_pizza': 'chartsRow',
+                'grafico_linha': 'chartsRow',
+                'transacoes': 'transactionsRow',
+            };
+
+            // Reordena as linhas
+            const rows = ['summaryRow', 'chartsRow', 'transactionsRow'];
+            const orderedRows = [];
+            widgetOrder.forEach(wid => {
+                const rowId = widgetToRow[wid];
+                if (rowId && !orderedRows.includes(rowId)) {
+                    orderedRows.push(rowId);
+                }
+            });
+            rows.forEach(r => { if (!orderedRows.includes(r)) orderedRows.push(r); });
+
+            orderedRows.forEach(rowId => {
+                const el = document.getElementById(rowId);
+                if (el) container.appendChild(el);
+            });
+        }
+    }
+
+    function setTheme(theme, save = true) {
+        document.documentElement.setAttribute('data-bs-theme', theme);
+        document.getElementById('btnThemeLight').classList.toggle('active', theme === 'light');
+        document.getElementById('btnThemeDark').classList.toggle('active', theme === 'dark');
+
+        if (currentLayout) {
+            currentLayout.tema = theme;
+        }
+
+        // Re-renderiza gráficos com cores corretas
+        reRenderCharts();
+
+        if (save) autoSaveLayout();
+    }
+
+    function reRenderCharts() {
+        // Precisamos dos dados atuais, então buscamos novamente
+        apiFetch('/summary').then(summary => {
+            renderChartPizza(summary);
+            renderChartLinha(summary.evolucao);
+        }).catch(() => {});
+    }
+
+    // ── Painel lateral ──────────────────────────────────────────────
+
+    function openCustomize() {
+        document.getElementById('customizePanel').classList.add('open');
+        document.getElementById('customizeOverlay').classList.add('open');
+        renderWidgetSortList();
+    }
+
+    function closeCustomize() {
+        document.getElementById('customizePanel').classList.remove('open');
+        document.getElementById('customizeOverlay').classList.remove('open');
+    }
+
+    function renderWidgetSortList() {
+        const list = document.getElementById('widgetSortList');
+        const widgets = (currentLayout && currentLayout.widgets) || [
+            { id: 'saldo' }, { id: 'grafico_pizza' }, { id: 'grafico_linha' }, { id: 'transacoes' },
+        ];
+
+        list.innerHTML = widgets.map((w, i) => `
+            <div class="widget-sort-item" draggable="true" data-idx="${i}" data-id="${w.id}">
+                <i class="bi bi-grip-vertical"></i>
+                <span>${WIDGET_LABELS[w.id] || w.id}</span>
+            </div>
+        `).join('');
+
+        // Drag & drop simples
+        let dragIdx = null;
+        list.querySelectorAll('.widget-sort-item').forEach(item => {
+            item.addEventListener('dragstart', (e) => {
+                dragIdx = parseInt(item.dataset.idx);
+                item.style.opacity = '0.5';
+            });
+            item.addEventListener('dragend', () => {
+                item.style.opacity = '1';
+            });
+            item.addEventListener('dragover', (e) => e.preventDefault());
+            item.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const dropIdx = parseInt(item.dataset.idx);
+                if (dragIdx === null || dragIdx === dropIdx) return;
+
+                // Reordena
+                const arr = [...currentLayout.widgets];
+                const [moved] = arr.splice(dragIdx, 1);
+                arr.splice(dropIdx, 0, moved);
+                currentLayout.widgets = arr;
+
+                renderWidgetSortList();
+                applyLayout(currentLayout);
+            });
+        });
+    }
+
+    // ── Salvar layout ───────────────────────────────────────────────
+
+    let saveTimeout = null;
+
+    function autoSaveLayout() {
+        if (saveTimeout) clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => saveLayoutToServer(), 1000);
+    }
+
+    async function saveLayoutNow() {
+        await saveLayoutToServer();
+        closeCustomize();
+    }
+
+    async function saveLayoutToServer() {
+        if (!currentLayout) return;
+        const status = document.getElementById('layoutSaveStatus');
+        status.innerHTML = '<span class="text-muted">Salvando…</span>';
+
+        try {
+            await apiFetch('/layout', {
+                method: 'POST',
+                body: JSON.stringify({ layout: currentLayout }),
+            });
+            status.innerHTML = '<span class="text-success"><i class="bi bi-check-circle"></i> Salvo!</span>';
+            showToast('Layout salvo!', 'success');
+        } catch (err) {
+            status.innerHTML = '<span class="text-danger">Erro ao salvar</span>';
+            showToast('Erro ao salvar layout', 'danger');
+        }
+
+        setTimeout(() => { status.innerHTML = ''; }, 3000);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  INICIALIZAÇÃO
+    // ═══════════════════════════════════════════════════════════════════
+
+    loadDashboard();
+
+    // Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+    </script>
+</body>
+</html>

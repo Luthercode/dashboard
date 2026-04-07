@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Financeiro — Login</title>
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+        }
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        .auth-card {
+            width: 100%;
+            max-width: 420px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            padding: 2.5rem 2rem;
+        }
+        .auth-card h2 {
+            font-weight: 700;
+            color: #1e1b4b;
+            margin-bottom: 0.25rem;
+        }
+        .auth-card .subtitle {
+            color: #6b7280;
+            margin-bottom: 1.5rem;
+        }
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.15);
+        }
+        .btn-primary {
+            background: var(--primary);
+            border-color: var(--primary);
+            padding: 0.6rem;
+            font-weight: 600;
+            border-radius: 10px;
+        }
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            border-color: var(--primary-hover);
+        }
+        .toggle-link {
+            color: var(--primary);
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .toggle-link:hover {
+            text-decoration: underline;
+        }
+        .alert {
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+        .input-group-text {
+            background: #f9fafb;
+            border-right: none;
+        }
+        .input-group .form-control {
+            border-left: none;
+        }
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-card">
+        <!-- Logo / Título -->
+        <div class="text-center mb-4">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">💰</div>
+            <h2 id="formTitle">Entrar</h2>
+            <p class="subtitle" id="formSubtitle">Acesse seu dashboard financeiro</p>
+        </div>
+
+        <!-- Alerta de feedback -->
+        <div id="alertBox" class="alert d-none" role="alert"></div>
+
+        <!-- Formulário -->
+        <form id="authForm" novalidate>
+            <div class="mb-3">
+                <label for="email" class="form-label fw-semibold">E-mail</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                    <input type="email" class="form-control" id="email" placeholder="seu@email.com" required>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label for="password" class="form-label fw-semibold">Senha</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                    <input type="password" class="form-control" id="password" placeholder="Mínimo 6 caracteres" required minlength="6">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 mb-3" id="submitBtn">
+                <span id="btnText">Entrar</span>
+                <span id="btnSpinner" class="spinner-border spinner-border-sm d-none ms-2" role="status"></span>
+            </button>
+        </form>
+
+        <p class="text-center mb-0" style="font-size: 0.95rem;">
+            <span id="toggleText">Não tem conta?</span>
+            <a class="toggle-link" id="toggleLink" onclick="toggleMode()">Criar conta</a>
+        </p>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        // ── Estado ──────────────────────────────────────────────────────
+        let isLogin = true;
+
+        // ── Elementos ───────────────────────────────────────────────────
+        const form = document.getElementById('authForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const alertBox = document.getElementById('alertBox');
+        const formTitle = document.getElementById('formTitle');
+        const formSubtitle = document.getElementById('formSubtitle');
+        const btnText = document.getElementById('btnText');
+        const btnSpinner = document.getElementById('btnSpinner');
+        const submitBtn = document.getElementById('submitBtn');
+        const toggleText = document.getElementById('toggleText');
+        const toggleLink = document.getElementById('toggleLink');
+
+        // Se já tem token, redireciona
+        if (localStorage.getItem('access_token')) {
+            window.location.href = 'dashboard.html';
+        }
+
+        // ── Alternar Login / Cadastro ───────────────────────────────────
+        function toggleMode() {
+            isLogin = !isLogin;
+            hideAlert();
+            if (isLogin) {
+                formTitle.textContent = 'Entrar';
+                formSubtitle.textContent = 'Acesse seu dashboard financeiro';
+                btnText.textContent = 'Entrar';
+                toggleText.textContent = 'Não tem conta?';
+                toggleLink.textContent = 'Criar conta';
+            } else {
+                formTitle.textContent = 'Criar Conta';
+                formSubtitle.textContent = 'Comece a controlar suas finanças';
+                btnText.textContent = 'Cadastrar';
+                toggleText.textContent = 'Já tem conta?';
+                toggleLink.textContent = 'Entrar';
+            }
+        }
+
+        // ── Feedback visual ─────────────────────────────────────────────
+        function showAlert(msg, type) {
+            alertBox.className = `alert alert-${type}`;
+            alertBox.textContent = msg;
+            alertBox.classList.remove('d-none');
+        }
+        function hideAlert() {
+            alertBox.classList.add('d-none');
+        }
+        function setLoading(loading) {
+            submitBtn.disabled = loading;
+            btnSpinner.classList.toggle('d-none', !loading);
+        }
+
+        // ── Submit ──────────────────────────────────────────────────────
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideAlert();
+
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+
+            if (!email || !password) {
+                showAlert('Preencha todos os campos.', 'warning');
+                return;
+            }
+            if (password.length < 6) {
+                showAlert('A senha deve ter pelo menos 6 caracteres.', 'warning');
+                return;
+            }
+
+            setLoading(true);
+            const endpoint = isLogin ? '/login' : '/register';
+
+            try {
+                const res = await fetch(APP_CONFIG.API_URL + endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password }),
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.detail || 'Erro desconhecido');
+                }
+
+                if (isLogin) {
+                    // Salva token e redireciona
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('user_email', data.email);
+                    window.location.href = 'dashboard.html';
+                } else {
+                    // Cadastro OK — mostra sucesso e volta para login
+                    showAlert('Conta criada! Faça login para continuar.', 'success');
+                    toggleMode();
+                }
+            } catch (err) {
+                showAlert(err.message, 'danger');
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        // ── Registrar Service Worker (PWA) ──────────────────────────────
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
+    </script>
+</body>
+</html>
