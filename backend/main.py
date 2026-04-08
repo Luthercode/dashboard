@@ -7,9 +7,10 @@ import os
 from datetime import datetime
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Depends, Header
+from fastapi import FastAPI, HTTPException, Depends, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
-from jose import jwt, JWTError
+from fastapi.responses import JSONResponse
+from jose import jwt
 from pydantic import BaseModel, Field
 from supabase import create_client, Client
 
@@ -19,10 +20,9 @@ load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
 
-if not all([SUPABASE_URL, SUPABASE_KEY, SUPABASE_JWT_SECRET]):
-    raise RuntimeError("Variáveis SUPABASE_URL, SUPABASE_KEY e SUPABASE_JWT_SECRET são obrigatórias no .env")
+if not all([SUPABASE_URL, SUPABASE_KEY]):
+    raise RuntimeError("Variáveis SUPABASE_URL e SUPABASE_KEY são obrigatórias no .env")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -31,11 +31,23 @@ app = FastAPI(title="Dashboard Financeiro", version="1.0.0")
 # CORS — permite o frontend se comunicar com o backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Em produção, restrinja ao domínio do frontend
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Handler global de exceções — garante que CORS headers são sempre enviados
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Erro interno: {str(exc)}"},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Credentials": "true",
+        },
+    )
 
 # ── Modelos Pydantic ─────────────────────────────────────────────────────────
 
