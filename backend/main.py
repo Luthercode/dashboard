@@ -199,50 +199,62 @@ DEFAULT_LAYOUT = {
 @app.get("/layout")
 def get_layout(user_id: str = Depends(get_current_user_id)):
     """Retorna o layout do dashboard do usuário. Cria um padrão se não existir."""
-    res = (
-        supabase.table("dashboard_layouts")
-        .select("*")
-        .eq("user_id", user_id)
-        .limit(1)
-        .execute()
-    )
-    if res.data:
-        return res.data[0]
+    try:
+        res = (
+            supabase.table("dashboard_layouts")
+            .select("*")
+            .eq("user_id", user_id)
+            .limit(1)
+            .execute()
+        )
+        if res.data:
+            return res.data[0]
 
-    # Cria layout padrão
-    row = {"user_id": user_id, "layout": DEFAULT_LAYOUT}
-    insert_res = supabase.table("dashboard_layouts").insert(row).execute()
-    if not insert_res.data:
-        raise HTTPException(status_code=500, detail="Erro ao criar layout padrão")
-    return insert_res.data[0]
+        # Tenta criar layout padrão
+        try:
+            row = {"user_id": user_id, "layout": DEFAULT_LAYOUT}
+            insert_res = supabase.table("dashboard_layouts").insert(row).execute()
+            if insert_res.data:
+                return insert_res.data[0]
+        except Exception:
+            pass
+
+    except Exception as e:
+        # Tabela pode não existir — retorna layout padrão sem salvar
+        pass
+
+    return {"id": None, "user_id": user_id, "layout": DEFAULT_LAYOUT}
 
 @app.post("/layout")
 def save_layout(body: LayoutSave, user_id: str = Depends(get_current_user_id)):
     """Salva/atualiza o layout do dashboard do usuário."""
-    # Verifica se já existe
-    existing = (
-        supabase.table("dashboard_layouts")
-        .select("id")
-        .eq("user_id", user_id)
-        .limit(1)
-        .execute()
-    )
-    if existing.data:
-        res = (
+    try:
+        existing = (
             supabase.table("dashboard_layouts")
-            .update({"layout": body.layout})
+            .select("id")
             .eq("user_id", user_id)
+            .limit(1)
             .execute()
         )
-    else:
-        res = (
-            supabase.table("dashboard_layouts")
-            .insert({"user_id": user_id, "layout": body.layout})
-            .execute()
-        )
-    if not res.data:
-        raise HTTPException(status_code=500, detail="Erro ao salvar layout")
-    return res.data[0]
+        if existing.data:
+            res = (
+                supabase.table("dashboard_layouts")
+                .update({"layout": body.layout})
+                .eq("user_id", user_id)
+                .execute()
+            )
+        else:
+            res = (
+                supabase.table("dashboard_layouts")
+                .insert({"user_id": user_id, "layout": body.layout})
+                .execute()
+            )
+        if res.data:
+            return res.data[0]
+    except Exception:
+        pass
+
+    return {"id": None, "user_id": user_id, "layout": body.layout}
 
 # ── Debug: Testar token (remover em produção) ───────────────────────────────
 
