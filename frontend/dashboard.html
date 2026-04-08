@@ -216,7 +216,9 @@
                     <div class="widget-header">
                         <h6 class="mb-0"><i class="bi bi-pie-chart"></i> Renda vs Gasto</h6>
                     </div>
-                    <canvas id="chartPizza" height="260"></canvas>
+                    <div style="position:relative;height:260px">
+                        <canvas id="chartPizza"></canvas>
+                    </div>
                 </div>
             </div>
             <div class="col-12 col-md-6" id="widget-grafico_linha">
@@ -516,6 +518,13 @@
         const colors = getChartColors();
 
         if (chartPizzaInstance) chartPizzaInstance.destroy();
+
+        // Sem dados — não renderiza
+        if (!summary.total_renda && !summary.total_gasto) {
+            chartPizzaInstance = null;
+            return;
+        }
+
         chartPizzaInstance = new Chart(ctx, {
             type: 'doughnut',
             data: {
