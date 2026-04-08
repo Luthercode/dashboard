@@ -1,887 +1,614 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-bs-theme="light">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dashboard Financeiro</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#6366f1">
+    <meta name="theme-color" content="#0a0e1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
-        /* ─── TOKENS ─── */
-        :root {
-            --primary: #6366f1; --primary-light: #818cf8; --primary-bg: rgba(99,102,241,.08);
-            --bg: #f0f2f5; --bg-sidebar: #ffffff; --card-bg: #ffffff;
-            --text: #1e1e2d; --text-secondary: #7b8191; --text-muted: #a1a5b7;
-            --border: #e8e8ed; --border-light: #f1f1f4;
-            --success: #22c55e; --success-bg: rgba(34,197,94,.1);
-            --danger: #ef4444; --danger-bg: rgba(239,68,68,.1);
-            --warning: #f59e0b; --warning-bg: rgba(245,158,11,.1);
-            --info: #3b82f6; --info-bg: rgba(59,130,246,.1);
-            --sidebar-w: 240px;
-            --radius: 16px; --radius-sm: 12px;
-        }
-        [data-bs-theme="dark"] {
-            --bg: #1a1a2e; --bg-sidebar: #16213e; --card-bg: #1f2940;
-            --text: #e2e8f0; --text-secondary: #94a3b8; --text-muted: #64748b;
-            --border: #2d3748; --border-light: #2d3748;
-            --primary-bg: rgba(99,102,241,.15);
-            --success-bg: rgba(34,197,94,.15); --danger-bg: rgba(239,68,68,.15);
-            --warning-bg: rgba(245,158,11,.15); --info-bg: rgba(59,130,246,.15);
-        }
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+        --bg:#0b0f1a;--bg2:#111827;--card:#151c2c;--card2:#1a2235;--card-hover:#1e2a40;
+        --border:#1e293b;--border2:#2a3548;
+        --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+        --primary:#6366f1;--primary-glow:rgba(99,102,241,.2);
+        --green:#22c55e;--green-bg:rgba(34,197,94,.12);--green-glow:rgba(34,197,94,.2);
+        --red:#ef4444;--red-bg:rgba(239,68,68,.12);--red-glow:rgba(239,68,68,.2);
+        --amber:#f59e0b;--amber-bg:rgba(245,158,11,.12);
+        --blue:#3b82f6;--blue-bg:rgba(59,130,246,.12);
+        --cyan:#06b6d4;--cyan-bg:rgba(6,182,212,.12);
+        --sidebar-w:220px;--radius:14px;--radius-sm:10px;
+    }
+    body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;display:flex;min-height:100vh;-webkit-font-smoothing:antialiased}
+    ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; display: flex; min-height: 100vh; transition: background .3s, color .3s; }
+    /* ── SIDEBAR ── */
+    .sidebar{width:var(--sidebar-w);background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform .3s}
+    .sb-brand{padding:1.2rem 1rem .8rem;display:flex;align-items:center;gap:.55rem}
+    .sb-logo{width:30px;height:30px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.8rem;color:#fff;font-weight:700}
+    .sb-brand span{font-weight:700;font-size:.95rem}
+    .sb-user{display:flex;align-items:center;gap:.55rem;padding:.6rem 1rem;margin:0 .6rem .4rem;background:var(--card2);border-radius:var(--radius-sm)}
+    .sb-avatar{width:28px;height:28px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#fff;font-weight:600;flex-shrink:0}
+    .sb-user-info{overflow:hidden}.sb-user-name{font-size:.75rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sb-user-tag{font-size:.65rem;color:var(--text3)}
+    .sb-nav{flex:1;padding:.25rem .6rem}
+    .sb-nav a{display:flex;align-items:center;gap:.6rem;padding:.55rem .75rem;border-radius:var(--radius-sm);color:var(--text2);font-size:.84rem;font-weight:500;text-decoration:none;transition:all .15s;margin-bottom:1px}
+    .sb-nav a:hover{background:var(--card2);color:var(--text)}
+    .sb-nav a.active{background:var(--primary);color:#fff}
+    .sb-nav a.active i{color:#fff}
+    .sb-nav a i{font-size:1rem;width:18px;text-align:center}
+    .sb-nav .divider{border-top:1px solid var(--border);margin:.6rem 0}
 
-        /* ─── SIDEBAR ─── */
-        .sidebar {
-            width: var(--sidebar-w); background: var(--bg-sidebar); border-right: 1px solid var(--border);
-            display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 1040;
-            transition: transform .3s, background .3s;
-        }
-        .sidebar-brand { padding: 1.25rem 1.25rem .75rem; display: flex; align-items: center; gap: .6rem; }
-        .sidebar-brand .logo { width: 32px; height: 32px; background: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: .9rem; }
-        .sidebar-brand span { font-weight: 700; font-size: 1.05rem; color: var(--text); }
-        .sidebar-nav { flex: 1; padding: .5rem .75rem; }
-        .sidebar-nav .nav-item {
-            display: flex; align-items: center; gap: .65rem; padding: .65rem .85rem; border-radius: var(--radius-sm);
-            color: var(--text-secondary); font-size: .88rem; font-weight: 500; cursor: pointer; transition: all .2s;
-            text-decoration: none; margin-bottom: 2px;
-        }
-        .sidebar-nav .nav-item:hover { background: var(--primary-bg); color: var(--primary); }
-        .sidebar-nav .nav-item.active { background: var(--primary); color: #fff; }
-        .sidebar-nav .nav-item.active i { color: #fff; }
-        .sidebar-nav .nav-item i { font-size: 1.1rem; width: 20px; text-align: center; }
-        .sidebar-nav .nav-divider { border-top: 1px solid var(--border); margin: .75rem 0; }
+    /* ── MAIN ── */
+    .main{margin-left:var(--sidebar-w);flex:1;min-height:100vh;display:flex;flex-direction:column}
 
-        .sidebar-help {
-            margin: .75rem; padding: 1rem; background: var(--primary-bg); border-radius: var(--radius-sm);
-            text-align: center; font-size: .82rem;
-        }
-        .sidebar-help p { color: var(--text-secondary); margin-bottom: .5rem; }
-        .sidebar-help .btn-help { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: .35rem .85rem; font-size: .8rem; font-weight: 600; cursor: pointer; }
+    /* ── TOPBAR ── */
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:.55rem 1.25rem;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;gap:.5rem;flex-wrap:wrap}
+    .topbar-left{display:flex;align-items:center;gap:.75rem}
+    .topbar-left h1{font-size:1.1rem;font-weight:700}
+    .menu-btn{display:none;background:none;border:none;color:var(--text);font-size:1.25rem;cursor:pointer;padding:.25rem}
+    .topbar-right{display:flex;align-items:center;gap:.5rem}
+    .period-btn{display:flex;align-items:center;gap:.3rem;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:.32rem .7rem;font-size:.78rem;color:var(--text2);cursor:pointer;position:relative;white-space:nowrap}
+    .period-btn:hover{border-color:var(--primary);color:var(--text)}
+    .period-dd{position:absolute;top:calc(100% + 4px);right:0;background:var(--card2);border:1px solid var(--border2);border-radius:var(--radius-sm);box-shadow:0 12px 32px rgba(0,0,0,.4);padding:.3rem;z-index:60;display:none;min-width:155px}
+    .period-dd.open{display:block}
+    .period-dd button{display:block;width:100%;text-align:left;border:none;background:none;padding:.4rem .65rem;border-radius:7px;font-size:.8rem;color:var(--text2);cursor:pointer}
+    .period-dd button:hover{background:var(--primary-glow);color:var(--primary)}
+    .period-dd button.active{background:var(--primary);color:#fff}
+    .search-wrap{position:relative}
+    .search-wrap input{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:.32rem .65rem .32rem 1.9rem;font-size:.78rem;color:var(--text);width:170px;outline:none;transition:border .2s}
+    .search-wrap input:focus{border-color:var(--primary)}
+    .search-wrap input::placeholder{color:var(--text3)}
+    .search-wrap i{position:absolute;left:.6rem;top:50%;transform:translateY(-50%);color:var(--text3);font-size:.8rem}
+    .icon-btn{background:none;border:1px solid var(--border);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--text2);cursor:pointer;transition:all .15s;font-size:.9rem}
+    .icon-btn:hover{background:var(--card2);color:var(--text);border-color:var(--primary)}
 
-        /* ─── MAIN ─── */
-        .main-content { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; }
+    /* ── GRID ── */
+    .grid{padding:1rem 1.25rem;display:flex;flex-direction:column;gap:.85rem}
 
-        /* ─── TOP BAR ─── */
-        .topbar {
-            background: var(--card-bg); border-bottom: 1px solid var(--border);
-            padding: .65rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
-            position: sticky; top: 0; z-index: 1030; transition: background .3s;
-        }
-        .topbar-left { display: flex; align-items: center; gap: 1rem; }
-        .topbar-left h1 { font-size: 1.25rem; font-weight: 700; margin: 0; }
-        .topbar-period {
-            display: flex; align-items: center; gap: .35rem; background: var(--bg); border-radius: 8px;
-            padding: .3rem .65rem; font-size: .82rem; color: var(--text-secondary); cursor: pointer; border: 1px solid var(--border);
-        }
-        .topbar-period i { font-size: .9rem; }
-        .topbar-right { display: flex; align-items: center; gap: .75rem; }
-        .theme-toggle { display: flex; align-items: center; gap: .25rem; background: var(--bg); border-radius: 20px; padding: 3px; border: 1px solid var(--border); }
-        .theme-toggle button { border: none; background: transparent; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: all .2s; font-size: .9rem; }
-        .theme-toggle button.active { background: var(--primary); color: #fff; }
-        .user-pill { display: flex; align-items: center; gap: .5rem; cursor: pointer; }
-        .user-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: .85rem; }
-        .user-name { font-size: .85rem; font-weight: 500; color: var(--text); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* ── CARDS ── */
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.1rem;transition:box-shadow .2s}
+    .card:hover{box-shadow:0 0 20px rgba(0,0,0,.15)}
+    .card-row{display:grid;gap:.85rem}
+    .card-row.c4{grid-template-columns:repeat(4,1fr)}
+    .card-row.c3{grid-template-columns:repeat(3,1fr)}
+    .card-row.c2-1{grid-template-columns:2fr 1fr}
+    .card-row.c1-1{grid-template-columns:1fr 1fr}
+    .card-label{font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:.4rem;display:flex;align-items:center;gap:.35rem}
+    .card-label i{font-size:.75rem}
+    .card-value{font-size:1.55rem;font-weight:700;line-height:1.2}
+    .card-sub{font-size:.72rem;margin-top:.2rem;display:flex;align-items:center;gap:.25rem}
+    .card-sub.up{color:var(--green)}.card-sub.down{color:var(--red)}.card-sub.muted{color:var(--text3)}
+    .card-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0}
+    .ic-green{background:var(--green-bg);color:var(--green)}.ic-red{background:var(--red-bg);color:var(--red)}.ic-blue{background:var(--blue-bg);color:var(--blue)}.ic-amber{background:var(--amber-bg);color:var(--amber)}.ic-purple{background:var(--primary-glow);color:var(--primary)}.ic-cyan{background:var(--cyan-bg);color:var(--cyan)}
 
-        /* Mobile sidebar toggle */
-        .sidebar-toggle { display: none; background: none; border: none; font-size: 1.3rem; color: var(--text); cursor: pointer; }
+    /* ── BALANCE CARD (special) ── */
+    .balance-card{background:linear-gradient(135deg,var(--card) 0%,#1a1f3a 100%);position:relative;overflow:hidden}
+    .balance-card::after{content:'';position:absolute;top:-40%;right:-20%;width:200px;height:200px;background:radial-gradient(circle,var(--primary-glow) 0%,transparent 70%);pointer-events:none}
+    .balance-val{font-size:2rem;font-weight:700}
+    .balance-change{display:inline-flex;align-items:center;gap:.2rem;padding:.15rem .5rem;border-radius:6px;font-size:.72rem;font-weight:600;margin-top:.3rem}
+    .balance-change.up{background:var(--green-bg);color:var(--green)}
+    .balance-change.down{background:var(--red-bg);color:var(--red)}
 
-        /* ─── PERIOD DROPDOWN ─── */
-        .period-dropdown {
-            position: absolute; top: 100%; left: 0; background: var(--card-bg); border: 1px solid var(--border);
-            border-radius: var(--radius-sm); box-shadow: 0 8px 24px rgba(0,0,0,.12); padding: .35rem; z-index: 1050;
-            display: none; min-width: 140px;
-        }
-        .period-dropdown.open { display: block; }
-        .period-dropdown .period-opt {
-            display: block; width: 100%; text-align: left; border: none; background: transparent;
-            padding: .45rem .75rem; border-radius: 8px; font-size: .84rem; color: var(--text); cursor: pointer;
-        }
-        .period-dropdown .period-opt:hover { background: var(--primary-bg); color: var(--primary); }
-        .period-dropdown .period-opt.active { background: var(--primary); color: #fff; }
+    /* ── COIN CARDS (top stats) ── */
+    .coin-card{display:flex;flex-direction:column;gap:.4rem}
+    .coin-header{display:flex;align-items:center;gap:.45rem}
+    .coin-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff;flex-shrink:0}
+    .coin-tag{font-size:.68rem;color:var(--text3);font-weight:500}
+    .coin-val{font-size:1.15rem;font-weight:700}
+    .coin-change{font-size:.7rem;font-weight:600;display:flex;align-items:center;gap:.15rem}
+    .coin-sparkline{height:32px;margin-top:auto}
 
-        /* ─── DASHBOARD GRID ─── */
-        .dash-grid { padding: 1.25rem 1.5rem; }
+    /* ── CHART ── */
+    .chart-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
+    .chart-title{font-size:.85rem;font-weight:600}
+    .chart-badge{font-size:.68rem;color:var(--text3);background:var(--card2);padding:.15rem .5rem;border-radius:6px}
 
-        /* ─── CARDS ─── */
-        .card-stat {
-            background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
-            padding: 1.1rem 1.25rem; transition: box-shadow .2s, background .3s; height: 100%;
-        }
-        .card-stat:hover { box-shadow: 0 4px 16px rgba(0,0,0,.06); }
-        .card-stat .card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: .65rem; }
-        .card-stat .card-label { font-size: .78rem; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: .3px; }
-        .card-stat .card-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
-        .card-stat .card-value { font-size: 1.65rem; font-weight: 700; line-height: 1.2; margin-bottom: .25rem; }
-        .card-stat .card-change { font-size: .76rem; font-weight: 500; display: flex; align-items: center; gap: .2rem; }
-        .card-change.up { color: var(--success); }
-        .card-change.down { color: var(--danger); }
+    /* ── TABLE ── */
+    .tx-table{width:100%;border-collapse:collapse}
+    .tx-table th{font-size:.68rem;text-transform:uppercase;letter-spacing:.4px;color:var(--text3);font-weight:600;padding:.55rem .6rem;text-align:left;border-bottom:1px solid var(--border)}
+    .tx-table td{padding:.55rem .6rem;font-size:.82rem;border-bottom:1px solid var(--border);vertical-align:middle}
+    .tx-table tr:last-child td{border-bottom:none}
+    .tx-table tr:hover td{background:var(--card2)}
+    .tx-name{font-weight:600;display:flex;align-items:center;gap:.5rem}
+    .tx-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .tx-dot.renda{background:var(--green)}.tx-dot.gasto{background:var(--red)}
+    .tx-badge{padding:.12rem .45rem;border-radius:5px;font-size:.68rem;font-weight:600}
+    .tx-badge.renda{background:var(--green-bg);color:var(--green)}.tx-badge.gasto{background:var(--red-bg);color:var(--red)}
+    .tx-badge.cat{background:var(--card2);color:var(--text3);font-weight:500}
 
-        .icon-purple { background: var(--primary-bg); color: var(--primary); }
-        .icon-green { background: var(--success-bg); color: var(--success); }
-        .icon-red { background: var(--danger-bg); color: var(--danger); }
-        .icon-amber { background: var(--warning-bg); color: var(--warning); }
-        .icon-blue { background: var(--info-bg); color: var(--info); }
+    /* ── MODAL ── */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:1rem}
+    .modal-overlay.open{display:flex}
+    .modal-box{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);width:100%;max-width:420px;padding:1.5rem}
+    .modal-box h3{font-size:1.05rem;font-weight:700;margin-bottom:1rem}
+    .form-group{margin-bottom:.75rem}
+    .form-group label{display:block;font-size:.75rem;font-weight:600;color:var(--text2);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.3px}
+    .form-input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.5rem .7rem;color:var(--text);font-size:.85rem;outline:none;transition:border .2s}
+    .form-input:focus{border-color:var(--primary)}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+    .btn-submit{width:100%;background:var(--primary);border:none;border-radius:10px;padding:.6rem;color:#fff;font-size:.88rem;font-weight:600;cursor:pointer;margin-top:.5rem;transition:opacity .2s}
+    .btn-submit:hover{opacity:.9}
+    .btn-submit:disabled{opacity:.5;cursor:not-allowed}
+    .btn-close-modal{background:none;border:none;color:var(--text3);font-size:1.2rem;cursor:pointer;padding:.2rem}
 
-        /* ─── CHART CARD ─── */
-        .chart-card {
-            background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
-            padding: 1.25rem; transition: box-shadow .2s, background .3s; height: 100%;
-        }
-        .chart-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.06); }
-        .chart-card .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-        .chart-card .chart-title { font-size: .9rem; font-weight: 600; }
-        .chart-card .chart-year { font-size: .78rem; color: var(--text-muted); }
+    /* ── TOAST ── */
+    .toast{position:fixed;bottom:1.25rem;right:1.25rem;padding:.65rem 1rem;border-radius:10px;font-size:.82rem;font-weight:500;color:#fff;z-index:300;transform:translateY(100px);opacity:0;transition:all .3s;max-width:320px}
+    .toast.show{transform:translateY(0);opacity:1}
+    .toast.success{background:#166534;border:1px solid #22c55e}.toast.danger{background:#7f1d1d;border:1px solid #ef4444}.toast.warning{background:#78350f;border:1px solid #f59e0b}
 
-        /* ─── STAT WITH PROGRESS ─── */
-        .stat-progress {
-            background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
-            padding: 1.25rem; display: flex; align-items: center; gap: 1rem; transition: background .3s; height: 100%;
-        }
-        .stat-progress:hover { box-shadow: 0 4px 16px rgba(0,0,0,.06); }
-        .progress-circle { position: relative; width: 56px; height: 56px; flex-shrink: 0; }
-        .progress-circle svg { transform: rotate(-90deg); }
-        .progress-circle .pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 700; color: var(--text); }
-        .stat-progress .sp-label { font-size: .78rem; color: var(--text-muted); margin-bottom: .15rem; }
-        .stat-progress .sp-value { font-size: 1.3rem; font-weight: 700; }
-        .stat-progress .sp-sub { font-size: .72rem; color: var(--text-muted); }
+    /* ── EMPTY ── */
+    .empty{text-align:center;padding:2rem 1rem;color:var(--text3)}.empty i{font-size:2.5rem;display:block;margin-bottom:.6rem;opacity:.3}
 
-        /* ─── TABLE ─── */
-        .table-card {
-            background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
-            padding: 1.25rem; transition: background .3s;
-        }
-        .table-card .table-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: .5rem; }
-        .table-card .table-title { font-size: .9rem; font-weight: 600; }
-        .search-box { position: relative; }
-        .search-box input { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: .4rem .75rem .4rem 2rem; font-size: .82rem; width: 220px; }
-        .search-box input:focus { outline: none; border-color: var(--primary); }
-        .search-box i { position: absolute; left: .65rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: .85rem; }
+    /* ── MOBILE OVERLAY ── */
+    .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:95;display:none}
+    .sidebar-overlay.open{display:block}
 
-        .tx-table { width: 100%; border-collapse: separate; border-spacing: 0; }
-        .tx-table th { font-size: .72rem; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); font-weight: 600; padding: .6rem .75rem; border-bottom: 1px solid var(--border); }
-        .tx-table td { padding: .65rem .75rem; font-size: .84rem; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
-        .tx-table tr:last-child td { border-bottom: none; }
-        .tx-table .tx-desc { font-weight: 500; }
-        .tx-badge { display: inline-block; padding: .2rem .6rem; border-radius: 6px; font-size: .72rem; font-weight: 600; }
-        .tx-badge.renda { background: var(--success-bg); color: var(--success); }
-        .tx-badge.gasto { background: var(--danger-bg); color: var(--danger); }
-        .tx-badge.cat { background: var(--bg); color: var(--text-secondary); font-weight: 500; }
-        [data-bs-theme="dark"] .tx-badge.cat { background: var(--border); }
+    /* ── BOTTOM NAV (mobile) ── */
+    .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);z-index:90;padding:.3rem 0 env(safe-area-inset-bottom,.3rem);justify-content:space-around}
+    .bottom-nav a{display:flex;flex-direction:column;align-items:center;gap:.1rem;color:var(--text3);text-decoration:none;font-size:.62rem;font-weight:500;padding:.3rem .5rem;border-radius:8px;transition:color .15s}
+    .bottom-nav a i{font-size:1.15rem}
+    .bottom-nav a.active{color:var(--primary)}
 
-        /* ─── MODAL ─── */
-        .modal-content { border-radius: var(--radius); background: var(--card-bg); color: var(--text); border: 1px solid var(--border); }
-        .form-control, .form-select { background: var(--bg); color: var(--text); border-color: var(--border); border-radius: 10px; font-size: .88rem; }
-        .form-control:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 .2rem rgba(99,102,241,.15); background: var(--bg); color: var(--text); }
-        .form-label { font-size: .82rem; font-weight: 600; color: var(--text-secondary); }
-        .btn-primary { background: var(--primary); border-color: var(--primary); border-radius: 10px; font-weight: 600; }
-        .btn-primary:hover { background: var(--primary-light); border-color: var(--primary-light); }
-
-        /* ─── TOAST ─── */
-        .toast-container { z-index: 1080; }
-
-        /* ─── NO DATA ─── */
-        .no-data { text-align: center; color: var(--text-muted); padding: 2rem 0; font-size: .85rem; }
-        .no-data i { font-size: 2rem; display: block; margin-bottom: .5rem; opacity: .4; }
-
-        /* ─── SKELETON ─── */
-        .skeleton { background: linear-gradient(90deg, var(--border) 25%, transparent 50%, var(--border) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; height: 1.5rem; }
-        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-
-        /* ─── RESPONSIVE ─── */
-        @media (max-width: 991px) {
-            .sidebar { transform: translateX(-100%); }
-            .sidebar.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,.15); }
-            .main-content { margin-left: 0; }
-            .sidebar-toggle { display: block; }
-            .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 1035; display: none; }
-            .sidebar-overlay.open { display: block; }
-        }
-        @media (max-width: 576px) {
-            .dash-grid { padding: .75rem; }
-            .card-stat .card-value { font-size: 1.3rem; }
-            .topbar { padding: .5rem .75rem; }
-            .topbar-left h1 { font-size: 1.05rem; }
-            .user-name { display: none; }
-        }
+    /* ── RESPONSIVE ── */
+    @media(max-width:1024px){
+        .card-row.c4{grid-template-columns:repeat(2,1fr)}
+        .card-row.c3{grid-template-columns:1fr 1fr}
+        .card-row.c2-1{grid-template-columns:1fr}
+    }
+    @media(max-width:768px){
+        .sidebar{transform:translateX(-100%)}
+        .sidebar.open{transform:translateX(0);box-shadow:4px 0 30px rgba(0,0,0,.3)}
+        .main{margin-left:0}
+        .menu-btn{display:block}
+        .bottom-nav{display:flex}
+        .grid{padding:.75rem;padding-bottom:4.5rem;gap:.65rem}
+        .card-row.c4{grid-template-columns:1fr 1fr}
+        .card-row.c3{grid-template-columns:1fr}
+        .card-row.c2-1,.card-row.c1-1{grid-template-columns:1fr}
+        .balance-val{font-size:1.5rem}
+        .search-wrap input{width:130px}
+        .topbar{padding:.4rem .75rem}
+    }
+    @media(max-width:380px){
+        .card-row.c4{grid-template-columns:1fr}
+        .topbar-right .search-wrap{display:none}
+    }
     </style>
 </head>
 <body>
-    <!-- SIDEBAR OVERLAY (mobile) -->
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    <!-- SIDEBAR OVERLAY -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- ─── SIDEBAR ─── -->
+    <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
-        <div class="sidebar-brand">
-            <div class="logo">💰</div>
+        <div class="sb-brand">
+            <div class="sb-logo">F</div>
             <span>Financeiro</span>
         </div>
-        <nav class="sidebar-nav">
-            <a class="nav-item active" href="#" onclick="return false">
-                <i class="bi bi-grid-1x2"></i> Dashboard
-            </a>
-            <a class="nav-item" href="#" data-bs-toggle="modal" data-bs-target="#modalTransaction">
-                <i class="bi bi-plus-circle"></i> Nova Transação
-            </a>
-            <a class="nav-item" href="#" onclick="scrollToTable(); return false;">
-                <i class="bi bi-receipt"></i> Transações
-            </a>
-            <a class="nav-item" href="#" onclick="scrollToCharts(); return false;">
-                <i class="bi bi-bar-chart-line"></i> Gráficos
-            </a>
-            <div class="nav-divider"></div>
-            <a class="nav-item" href="#" onclick="openCustomize(); return false;">
-                <i class="bi bi-gear"></i> Configurações
-            </a>
-            <a class="nav-item" href="#" onclick="logout(); return false;">
-                <i class="bi bi-box-arrow-left"></i> Sair
-            </a>
-        </nav>
-        <div class="sidebar-help">
-            <p>Precisa de ajuda?<br>Fale conosco!</p>
-            <button class="btn-help" onclick="window.open('https://github.com/Luthercode/dashboard','_blank')">Suporte</button>
+        <div class="sb-user">
+            <div class="sb-avatar" id="userAvatar">U</div>
+            <div class="sb-user-info">
+                <div class="sb-user-name" id="sidebarUserName">Usuário</div>
+                <div class="sb-user-tag" id="sidebarUserEmail">email</div>
+            </div>
         </div>
+        <nav class="sb-nav">
+            <a href="#" class="active" id="navDash"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+            <a href="#" id="navNewTx"><i class="bi bi-plus-circle"></i> Nova Transação</a>
+            <a href="#" id="navTx"><i class="bi bi-receipt"></i> Transações</a>
+            <a href="#" id="navCharts"><i class="bi bi-bar-chart-line"></i> Gráficos</a>
+            <div class="divider"></div>
+            <a href="#" id="navLogout"><i class="bi bi-box-arrow-left"></i> Sair</a>
+        </nav>
     </aside>
 
-    <!-- ─── MAIN ─── -->
-    <div class="main-content">
-        <!-- TOP BAR -->
+    <!-- MAIN -->
+    <div class="main">
+        <!-- TOPBAR -->
         <header class="topbar">
             <div class="topbar-left">
-                <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+                <button class="menu-btn" id="menuBtn"><i class="bi bi-list"></i></button>
                 <h1>Dashboard</h1>
-                <div class="topbar-period" id="periodBtn" onclick="togglePeriodDropdown()" style="position:relative">
-                    <i class="bi bi-calendar3"></i>
-                    <span id="periodLabel">Todo o Período</span>
-                    <i class="bi bi-chevron-down" style="font-size:.7rem;margin-left:.2rem"></i>
-                    <div class="period-dropdown" id="periodDropdown">
-                        <button class="period-opt" data-periodo="7d">Últimos 7 dias</button>
-                        <button class="period-opt" data-periodo="30d">Últimos 30 dias</button>
-                        <button class="period-opt" data-periodo="90d">Últimos 90 dias</button>
-                        <button class="period-opt" data-periodo="12m">Últimos 12 meses</button>
-                        <button class="period-opt active" data-periodo="all">Todo o Período</button>
-                    </div>
-                </div>
             </div>
             <div class="topbar-right">
-                <div class="theme-toggle">
-                    <button id="btnThemeLight" class="active" onclick="setTheme('light')" title="Tema claro"><i class="bi bi-sun-fill"></i></button>
-                    <button id="btnThemeDark" onclick="setTheme('dark')" title="Tema escuro"><i class="bi bi-moon-fill"></i></button>
+                <div class="period-btn" id="periodBtn">
+                    <i class="bi bi-calendar3"></i>
+                    <span id="periodLabel">Tudo</span>
+                    <i class="bi bi-chevron-down" style="font-size:.65rem"></i>
+                    <div class="period-dd" id="periodDd">
+                        <button data-p="7d">7 dias</button>
+                        <button data-p="30d">30 dias</button>
+                        <button data-p="90d">90 dias</button>
+                        <button data-p="12m">12 meses</button>
+                        <button data-p="all" class="active">Tudo</button>
+                    </div>
                 </div>
-                <div class="user-pill" onclick="logout()" title="Sair">
-                    <div class="user-avatar" id="userAvatar">U</div>
-                    <span class="user-name" id="userEmail"></span>
+                <div class="search-wrap">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="searchInput" placeholder="Buscar…">
                 </div>
+                <button class="icon-btn" id="btnNewTx" title="Nova Transação"><i class="bi bi-plus-lg"></i></button>
             </div>
         </header>
 
-        <!-- ═══ DASHBOARD CONTENT ═══ -->
-        <div class="dash-grid">
-            <!-- ROW 1: 4 stat cards -->
-            <div class="row g-3 mb-3">
-                <div class="col-6 col-lg-3">
-                    <div class="card-stat">
-                        <div class="card-top">
-                            <span class="card-label">Saldo Total</span>
-                            <div class="card-icon icon-purple"><i class="bi bi-wallet2"></i></div>
-                        </div>
-                        <div class="card-value" id="saldoValor"><div class="skeleton" style="width:70%"></div></div>
-                        <div class="card-change" id="saldoChange"></div>
-                    </div>
+        <!-- CONTENT -->
+        <div class="grid">
+            <!-- ROW 1: Balance + Top 3 stats -->
+            <div class="card-row c2-1" id="row1">
+                <!-- Balance -->
+                <div class="card balance-card">
+                    <div class="card-label"><i class="bi bi-wallet2"></i> Meu Saldo</div>
+                    <div class="balance-val" id="saldoVal"><div class="skeleton" style="width:60%;height:2rem;border-radius:8px"></div></div>
+                    <div class="balance-change up" id="saldoChange" style="display:none"><i class="bi bi-arrow-up-short"></i> <span id="saldoChangeTxt"></span></div>
+                    <div style="position:relative;height:80px;margin-top:.5rem"><canvas id="chartBalance"></canvas></div>
                 </div>
-                <div class="col-6 col-lg-3">
-                    <div class="card-stat">
-                        <div class="card-top">
-                            <span class="card-label">Total Rendas</span>
-                            <div class="card-icon icon-green"><i class="bi bi-arrow-up-circle"></i></div>
+                <!-- Top 3 cards -->
+                <div style="display:flex;flex-direction:column;gap:.85rem">
+                    <div class="card coin-card">
+                        <div class="coin-header">
+                            <div class="coin-icon" style="background:var(--green)"><i class="bi bi-arrow-up-short"></i></div>
+                            <div><div class="coin-tag">Total Rendas</div></div>
                         </div>
-                        <div class="card-value" style="color:var(--success)" id="rendaValor"><div class="skeleton" style="width:70%"></div></div>
-                        <div class="card-change" id="rendaChange"></div>
+                        <div class="coin-val" style="color:var(--green)" id="rendaVal">—</div>
                     </div>
-                </div>
-                <div class="col-6 col-lg-3">
-                    <div class="card-stat">
-                        <div class="card-top">
-                            <span class="card-label">Total Gastos</span>
-                            <div class="card-icon icon-red"><i class="bi bi-arrow-down-circle"></i></div>
+                    <div class="card coin-card">
+                        <div class="coin-header">
+                            <div class="coin-icon" style="background:var(--red)"><i class="bi bi-arrow-down-short"></i></div>
+                            <div><div class="coin-tag">Total Gastos</div></div>
                         </div>
-                        <div class="card-value" style="color:var(--danger)" id="gastoValor"><div class="skeleton" style="width:70%"></div></div>
-                        <div class="card-change" id="gastoChange"></div>
-                    </div>
-                </div>
-                <div class="col-6 col-lg-3">
-                    <div class="card-stat">
-                        <div class="card-top">
-                            <span class="card-label">Transações</span>
-                            <div class="card-icon icon-blue"><i class="bi bi-receipt"></i></div>
-                        </div>
-                        <div class="card-value" style="color:var(--info)" id="numTransacoes"><div class="skeleton" style="width:50%"></div></div>
-                        <div class="card-change" id="txChange"></div>
+                        <div class="coin-val" style="color:var(--red)" id="gastoVal">—</div>
                     </div>
                 </div>
             </div>
 
-            <!-- ROW 2: 2 stat cards + 2 donut charts -->
-            <div class="row g-3 mb-3">
-                <div class="col-6 col-lg-3">
-                    <div class="card-stat">
-                        <div class="card-top">
-                            <span class="card-label">Média Diária</span>
-                            <div class="card-icon icon-amber"><i class="bi bi-calendar-day"></i></div>
+            <!-- ROW 2: 4 mini stat cards -->
+            <div class="card-row c4" id="row2">
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:start">
+                        <div>
+                            <div class="card-label"><i class="bi bi-receipt"></i> Transações</div>
+                            <div class="card-value" style="color:var(--blue)" id="numTx">0</div>
+                            <div class="card-sub muted">no período</div>
                         </div>
-                        <div class="card-value" style="color:var(--warning)" id="mediaDiariaValor"><div class="skeleton" style="width:70%"></div></div>
-                        <div class="card-change down" id="mediaDiariaInfo">gasto por dia</div>
+                        <div class="card-icon ic-blue"><i class="bi bi-receipt"></i></div>
                     </div>
                 </div>
-                <div class="col-6 col-lg-3">
-                    <div class="card-stat">
-                        <div class="card-top">
-                            <span class="card-label">Maior Gasto</span>
-                            <div class="card-icon icon-red"><i class="bi bi-exclamation-triangle"></i></div>
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:start">
+                        <div>
+                            <div class="card-label"><i class="bi bi-calendar-day"></i> Média/Dia</div>
+                            <div class="card-value" style="color:var(--amber)" id="mediaVal">—</div>
+                            <div class="card-sub muted">gasto diário</div>
                         </div>
-                        <div class="card-value" style="color:var(--danger);font-size:1.35rem" id="maiorGastoValor"><div class="skeleton" style="width:70%"></div></div>
-                        <div class="card-change" id="maiorGastoDesc" style="color:var(--text-muted)"></div>
+                        <div class="card-icon ic-amber"><i class="bi bi-calendar-day"></i></div>
                     </div>
                 </div>
-                <div class="col-6 col-lg-3">
-                    <div class="chart-card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:.85rem">
-                        <div style="position:relative;width:100%;max-width:180px;aspect-ratio:1">
-                            <canvas id="chartDonut"></canvas>
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:start">
+                        <div>
+                            <div class="card-label"><i class="bi bi-exclamation-triangle"></i> Maior Gasto</div>
+                            <div class="card-value" style="color:var(--red);font-size:1.2rem" id="maiorGVal">—</div>
+                            <div class="card-sub muted" id="maiorGDesc"></div>
                         </div>
-                        <div style="font-size:.78rem;color:var(--text-muted);margin-top:.3rem">Renda vs Gasto</div>
+                        <div class="card-icon ic-red"><i class="bi bi-exclamation-triangle"></i></div>
                     </div>
                 </div>
-                <div class="col-6 col-lg-3">
-                    <div class="chart-card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:.85rem">
-                        <div style="position:relative;width:100%;max-width:180px;aspect-ratio:1">
-                            <canvas id="chartCategoria"></canvas>
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:start">
+                        <div>
+                            <div class="card-label"><i class="bi bi-trophy"></i> Maior Renda</div>
+                            <div class="card-value" style="color:var(--green);font-size:1.2rem" id="maiorRVal">—</div>
+                            <div class="card-sub muted" id="maiorRDesc"></div>
                         </div>
-                        <div style="font-size:.78rem;color:var(--text-muted);margin-top:.3rem">Por Categoria</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ROW 3: Bar chart + 2 stat progress -->
-            <div class="row g-3 mb-3" id="chartsSection">
-                <div class="col-12 col-lg-7">
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <span class="chart-title">Evolução Mensal</span>
-                            <span class="chart-year" id="chartBarYear">2026</span>
-                        </div>
-                        <div style="position:relative;height:260px">
-                            <canvas id="chartBar"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-lg-5">
-                    <div class="row g-3 h-100">
-                        <div class="col-12">
-                            <div class="stat-progress">
-                                <div class="progress-circle" id="progressRenda">
-                                    <svg width="56" height="56" viewBox="0 0 56 56">
-                                        <circle cx="28" cy="28" r="24" fill="none" stroke="var(--border)" stroke-width="5"/>
-                                        <circle cx="28" cy="28" r="24" fill="none" stroke="var(--success)" stroke-width="5" stroke-dasharray="150.8" stroke-dashoffset="150.8" stroke-linecap="round" id="progressRendaCircle"/>
-                                    </svg>
-                                    <div class="pct" id="progressRendaPct">0%</div>
-                                </div>
-                                <div>
-                                    <div class="sp-label">Total Rendas</div>
-                                    <div class="sp-value" style="color:var(--success)" id="rendaProgress"><div class="skeleton" style="width:100px"></div></div>
-                                    <div class="sp-sub">período atual</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <div class="stat-progress">
-                                <div class="progress-circle" id="progressGasto">
-                                    <svg width="56" height="56" viewBox="0 0 56 56">
-                                        <circle cx="28" cy="28" r="24" fill="none" stroke="var(--border)" stroke-width="5"/>
-                                        <circle cx="28" cy="28" r="24" fill="none" stroke="var(--danger)" stroke-width="5" stroke-dasharray="150.8" stroke-dashoffset="150.8" stroke-linecap="round" id="progressGastoCircle"/>
-                                    </svg>
-                                    <div class="pct" id="progressGastoPct">0%</div>
-                                </div>
-                                <div>
-                                    <div class="sp-label">Total Gastos</div>
-                                    <div class="sp-value" style="color:var(--danger)" id="gastoProgress"><div class="skeleton" style="width:100px"></div></div>
-                                    <div class="sp-sub">período atual</div>
-                                </div>
-                            </div>
-                        </div>
+                        <div class="card-icon ic-green"><i class="bi bi-trophy"></i></div>
                     </div>
                 </div>
             </div>
 
-            <!-- ROW 4: Daily trend line -->
-            <div class="row g-3 mb-3">
-                <div class="col-12">
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <span class="chart-title">Atividade Diária</span>
-                            <span class="chart-year" id="chartDailyYear">2026</span>
-                        </div>
-                        <div style="position:relative;height:220px">
-                            <canvas id="chartDaily"></canvas>
-                        </div>
+            <!-- ROW 3: Bar Chart + Donut -->
+            <div class="card-row c2-1" id="chartSection">
+                <div class="card">
+                    <div class="chart-head">
+                        <span class="chart-title">Evolução Mensal</span>
+                        <span class="chart-badge" id="barYear">2026</span>
                     </div>
+                    <div style="position:relative;height:230px"><canvas id="chartBar"></canvas></div>
                 </div>
+                <div class="card">
+                    <div class="chart-head">
+                        <span class="chart-title">Gastos por Categoria</span>
+                    </div>
+                    <div style="position:relative;height:230px"><canvas id="chartCat"></canvas></div>
+                </div>
+            </div>
+
+            <!-- ROW 4: Daily chart -->
+            <div class="card">
+                <div class="chart-head">
+                    <span class="chart-title">Atividade Diária</span>
+                    <span class="chart-badge" id="dailyYear">2026</span>
+                </div>
+                <div style="position:relative;height:180px"><canvas id="chartDaily"></canvas></div>
             </div>
 
             <!-- ROW 5: Transactions Table -->
-            <div class="table-card" id="tableSection">
-                <div class="table-header">
-                    <span class="table-title"><i class="bi bi-list-ul"></i> Transações Recentes</span>
-                    <div class="d-flex gap-2 align-items-center">
-                        <div class="search-box">
-                            <i class="bi bi-search"></i>
-                            <input type="text" id="searchInput" placeholder="Buscar…">
-                        </div>
-                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalTransaction" style="border-radius:8px">
-                            <i class="bi bi-plus-lg"></i> Nova
-                        </button>
-                    </div>
+            <div class="card" id="txSection">
+                <div class="chart-head">
+                    <span class="chart-title">Transações Recentes</span>
+                    <span class="chart-badge" id="txCount">0 registros</span>
                 </div>
                 <div style="overflow-x:auto">
                     <table class="tx-table">
-                        <thead>
-                            <tr>
-                                <th>Descrição</th>
-                                <th>Categoria</th>
-                                <th>Data</th>
-                                <th>Tipo</th>
-                                <th style="text-align:right">Valor</th>
-                            </tr>
-                        </thead>
-                        <tbody id="transactionsBody">
-                            <tr><td colspan="5" style="text-align:center;padding:2rem"><div class="spinner-border spinner-border-sm text-primary"></div> Carregando…</td></tr>
-                        </tbody>
+                        <thead><tr><th>Descrição</th><th>Categoria</th><th>Data</th><th>Tipo</th><th style="text-align:right">Valor</th></tr></thead>
+                        <tbody id="txBody"><tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text3)">Carregando…</td></tr></tbody>
                     </table>
                 </div>
-                <p class="no-data d-none" id="emptyState">
-                    <i class="bi bi-inbox"></i>
-                    Nenhuma transação ainda. Clique em <strong>+ Nova</strong> para começar!
-                </p>
+                <div class="empty d-none" id="emptyState"><i class="bi bi-inbox"></i>Nenhuma transação. Clique em + para começar!</div>
             </div>
         </div>
     </div>
 
-    <!-- ─── MODAL: Nova Transação ─── -->
-    <div class="modal fade" id="modalTransaction" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold">Nova Transação</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="transactionForm" novalidate>
-                        <div class="row g-3">
-                            <div class="col-6">
-                                <label class="form-label">Tipo</label>
-                                <select class="form-select" id="txTipo" required>
-                                    <option value="renda">💰 Renda</option>
-                                    <option value="gasto">💸 Gasto</option>
-                                </select>
-                            </div>
-                            <div class="col-6">
-                                <label class="form-label">Valor (R$)</label>
-                                <input type="number" class="form-control" id="txValor" min="0.01" step="0.01" placeholder="0,00" required>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label">Descrição</label>
-                                <input type="text" class="form-control" id="txDescricao" maxlength="200" placeholder="Ex: Salário, Aluguel…" required>
-                            </div>
-                            <div class="col-6">
-                                <label class="form-label">Categoria</label>
-                                <select class="form-select" id="txCategoria">
-                                    <option value="Alimentação">🍔 Alimentação</option>
-                                    <option value="Transporte">🚗 Transporte</option>
-                                    <option value="Moradia">🏠 Moradia</option>
-                                    <option value="Saúde">💊 Saúde</option>
-                                    <option value="Educação">📚 Educação</option>
-                                    <option value="Lazer">🎮 Lazer</option>
-                                    <option value="Salário">💼 Salário</option>
-                                    <option value="Freelance">💻 Freelance</option>
-                                    <option value="Investimentos">📈 Investimentos</option>
-                                    <option value="Compras">🛒 Compras</option>
-                                    <option value="Contas">📄 Contas</option>
-                                    <option value="Outros" selected>📦 Outros</option>
-                                </select>
-                            </div>
-                            <div class="col-6">
-                                <label class="form-label">Data</label>
-                                <input type="date" class="form-control" id="txData" required>
-                            </div>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100 mt-3" id="txSubmitBtn">
-                            <span id="txBtnText">Salvar</span>
-                            <span id="txBtnSpinner" class="spinner-border spinner-border-sm d-none ms-2"></span>
-                        </button>
-                    </form>
-                </div>
+    <!-- BOTTOM NAV (mobile) -->
+    <nav class="bottom-nav">
+        <a href="#" class="active" id="bnDash"><i class="bi bi-grid-1x2-fill"></i>Home</a>
+        <a href="#" id="bnCharts"><i class="bi bi-bar-chart-line"></i>Gráficos</a>
+        <a href="#" id="bnAdd"><i class="bi bi-plus-circle-fill" style="font-size:1.5rem;color:var(--primary)"></i>Novo</a>
+        <a href="#" id="bnTx"><i class="bi bi-receipt"></i>Extrato</a>
+        <a href="#" id="bnLogout"><i class="bi bi-box-arrow-left"></i>Sair</a>
+    </nav>
+
+    <!-- MODAL: Nova Transação -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-box">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+                <h3 style="margin:0">Nova Transação</h3>
+                <button class="btn-close-modal" id="modalClose"><i class="bi bi-x-lg"></i></button>
             </div>
+            <form id="txForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tipo</label>
+                        <select class="form-input" id="txTipo"><option value="renda">💰 Renda</option><option value="gasto" selected>💸 Gasto</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Valor (R$)</label>
+                        <input type="number" class="form-input" id="txValor" min="0.01" step="0.01" placeholder="0,00" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <input type="text" class="form-input" id="txDesc" maxlength="200" placeholder="Ex: Salário, Aluguel…" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Categoria</label>
+                        <select class="form-input" id="txCat">
+                            <option value="Alimentação">🍔 Alimentação</option><option value="Transporte">🚗 Transporte</option>
+                            <option value="Moradia">🏠 Moradia</option><option value="Saúde">💊 Saúde</option>
+                            <option value="Educação">📚 Educação</option><option value="Lazer">🎮 Lazer</option>
+                            <option value="Salário">💼 Salário</option><option value="Freelance">💻 Freelance</option>
+                            <option value="Investimentos">📈 Investimentos</option><option value="Compras">🛒 Compras</option>
+                            <option value="Contas">📄 Contas</option><option value="Outros" selected>📦 Outros</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Data</label>
+                        <input type="date" class="form-input" id="txData" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit" id="txSubmit">Salvar</button>
+            </form>
         </div>
     </div>
 
-    <!-- ─── CUSTOMIZE PANEL ─── -->
-    <div class="sidebar-overlay" id="customizeOverlay" onclick="closeCustomize()" style="display:none"></div>
-    <aside class="sidebar" id="customizePanel" style="left:auto;right:-340px;width:320px;z-index:1060;transition:right .3s">
-        <div style="padding:1.25rem">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="fw-bold mb-0"><i class="bi bi-palette"></i> Personalizar</h6>
-                <button style="background:none;border:none;font-size:1.2rem;color:var(--text);cursor:pointer" onclick="closeCustomize()"><i class="bi bi-x-lg"></i></button>
-            </div>
-            <div class="mb-3">
-                <label class="form-label" style="font-size:.82rem;font-weight:600">Tema</label>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-secondary flex-fill" onclick="setTheme('light')"><i class="bi bi-sun"></i> Claro</button>
-                    <button class="btn btn-sm btn-outline-secondary flex-fill" onclick="setTheme('dark')"><i class="bi bi-moon-stars"></i> Escuro</button>
-                </div>
-            </div>
-            <button class="btn btn-primary w-100 btn-sm" onclick="saveLayoutNow()"><i class="bi bi-check-lg"></i> Salvar</button>
-            <div id="layoutSaveStatus" class="text-center mt-2" style="font-size:.82rem"></div>
-        </div>
-    </aside>
+    <!-- TOAST -->
+    <div class="toast" id="toast"></div>
 
-    <!-- ─── TOAST ─── -->
-    <div class="toast-container position-fixed bottom-0 end-0 p-3">
-        <div id="appToast" class="toast align-items-center border-0" role="alert">
-            <div class="d-flex">
-                <div class="toast-body" id="toastBody"></div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="config.js"></script>
     <script>
-    // ═══════════════════════════════════════════════════════════════════
-    //  STATE
-    // ═══════════════════════════════════════════════════════════════════
+    /* ═══ STATE ═══ */
     const TOKEN = localStorage.getItem('access_token');
     const USER_EMAIL = localStorage.getItem('user_email');
-    if (!TOKEN) { window.location.href = 'index.html'; }
+    if(!TOKEN){window.location.href='index.html'}
+    const initials = USER_EMAIL ? USER_EMAIL.charAt(0).toUpperCase() : 'U';
+    document.getElementById('userAvatar').textContent = initials;
+    document.getElementById('sidebarUserName').textContent = USER_EMAIL ? USER_EMAIL.split('@')[0] : 'Usuário';
+    document.getElementById('sidebarUserEmail').textContent = USER_EMAIL || '';
 
-    document.getElementById('userEmail').textContent = USER_EMAIL || '';
-    if (USER_EMAIL) {
-        document.getElementById('userAvatar').textContent = USER_EMAIL.charAt(0).toUpperCase();
+    let periodo = 'all';
+    let allTx = [];
+    let summary = null;
+    let cBalance=null,cBar=null,cCat=null,cDaily=null;
+    const PNAMES={'7d':'7 dias','30d':'30 dias','90d':'90 dias','12m':'12 meses','all':'Tudo'};
+    const COLORS=['#6366f1','#f43f5e','#22c55e','#f59e0b','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316','#06b6d4','#84cc16','#a855f7'];
+    const CC={text:'#94a3b8',grid:'#1e293b'};
+
+    /* ═══ API ═══ */
+    function headers(){return{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN}}
+    async function api(path,opts={}){
+        const r=await fetch(APP_CONFIG.API_URL+path,{...opts,headers:{...headers(),...(opts.headers||{})}});
+        if(r.status===401){toast('Sessão expirada','danger');setTimeout(()=>{localStorage.clear();location.href='index.html'},1500);return}
+        if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||'Erro')}
+        return r.json();
     }
+    function fmt(v){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v)}
+    function fmtDate(s){if(!s)return'';const d=new Date(s);return isNaN(d)?s:d.toLocaleDateString('pt-BR',{timeZone:'UTC'})}
+    function fmtMonth(m){const[y,mo]=m.split('-');return['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][parseInt(mo)-1]}
+    function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
+    function toast(msg,type='success'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';setTimeout(()=>t.classList.remove('show'),3000)}
+    function logout(){localStorage.clear();location.href='index.html'}
 
-    let currentPeriodo = 'all';
-    let currentLayout = null;
-    let allTransactions = [];
-    let cachedSummary = null;
-    let chartDonut = null, chartBar = null, chartCategoria = null, chartDaily = null;
+    /* ═══ NAVIGATION ═══ */
+    const $=id=>document.getElementById(id);
+    // Sidebar
+    $('menuBtn').onclick=()=>{$('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('open')};
+    $('sidebarOverlay').onclick=()=>{$('sidebar').classList.remove('open');$('sidebarOverlay').classList.remove('open')};
+    function closeSidebar(){$('sidebar').classList.remove('open');$('sidebarOverlay').classList.remove('open')}
+    $('navDash').onclick=e=>{e.preventDefault();closeSidebar();window.scrollTo({top:0,behavior:'smooth'})};
+    $('navNewTx').onclick=e=>{e.preventDefault();closeSidebar();openModal()};
+    $('navTx').onclick=e=>{e.preventDefault();closeSidebar();$('txSection').scrollIntoView({behavior:'smooth'})};
+    $('navCharts').onclick=e=>{e.preventDefault();closeSidebar();$('chartSection').scrollIntoView({behavior:'smooth'})};
+    $('navLogout').onclick=e=>{e.preventDefault();logout()};
+    // Bottom nav
+    $('bnDash').onclick=e=>{e.preventDefault();window.scrollTo({top:0,behavior:'smooth'})};
+    $('bnCharts').onclick=e=>{e.preventDefault();$('chartSection').scrollIntoView({behavior:'smooth'})};
+    $('bnAdd').onclick=e=>{e.preventDefault();openModal()};
+    $('bnTx').onclick=e=>{e.preventDefault();$('txSection').scrollIntoView({behavior:'smooth'})};
+    $('bnLogout').onclick=e=>{e.preventDefault();logout()};
+    // Topbar new tx
+    $('btnNewTx').onclick=()=>openModal();
 
-    const PERIOD_LABELS = { '7d': 'Últimos 7 dias', '30d': 'Últimos 30 dias', '90d': 'Últimos 90 dias', '12m': 'Últimos 12 meses', 'all': 'Todo o Período' };
-    const CAT_COLORS = ['#6366f1','#f43f5e','#22c55e','#f59e0b','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316','#06b6d4','#84cc16','#a855f7'];
-
-    // ═══════════════════════════════════════════════════════════════════
-    //  UTILS
-    // ═══════════════════════════════════════════════════════════════════
-    function apiHeaders() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN }; }
-
-    async function apiFetch(path, options = {}) {
-        const res = await fetch(APP_CONFIG.API_URL + path, { ...options, headers: { ...apiHeaders(), ...(options.headers || {}) } });
-        if (res.status === 401) { showToast('Sessão expirada.', 'danger'); setTimeout(() => { localStorage.clear(); window.location.href = 'index.html'; }, 2000); return; }
-        if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.detail || 'Erro'); }
-        return res.json();
-    }
-
-    function formatBRL(v) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v); }
-    function formatDate(s) { if (!s) return ''; const d = new Date(s); return isNaN(d) ? s : d.toLocaleDateString('pt-BR', { timeZone: 'UTC' }); }
-    function formatMonth(m) { const [y, mo] = m.split('-'); const n = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']; return n[parseInt(mo)-1]; }
-    function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
-    function showToast(msg, type='success') { const t = document.getElementById('appToast'); t.className = `toast align-items-center border-0 text-bg-${type}`; document.getElementById('toastBody').textContent = msg; bootstrap.Toast.getOrCreateInstance(t).show(); }
-    function logout() { localStorage.clear(); window.location.href = 'index.html'; }
-    function getCC() { const dk = document.documentElement.getAttribute('data-bs-theme') === 'dark'; return { text: dk ? '#cbd5e1' : '#475569', grid: dk ? '#334155' : '#e2e8f0', bg: dk ? 'rgba(99,102,241,.15)' : 'rgba(99,102,241,.06)' }; }
-
-    // ═══════════════════════════════════════════════════════════════════
-    //  SIDEBAR / NAV
-    // ═══════════════════════════════════════════════════════════════════
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('open');
-        document.getElementById('sidebarOverlay').classList.toggle('open');
-    }
-    function scrollToTable() { document.getElementById('tableSection').scrollIntoView({ behavior: 'smooth' }); }
-    function scrollToCharts() { document.getElementById('chartsSection').scrollIntoView({ behavior: 'smooth' }); }
-
-    // ═══════════════════════════════════════════════════════════════════
-    //  PERIOD
-    // ═══════════════════════════════════════════════════════════════════
-    function togglePeriodDropdown() { document.getElementById('periodDropdown').classList.toggle('open'); }
-    document.addEventListener('click', e => { if (!e.target.closest('#periodBtn')) document.getElementById('periodDropdown').classList.remove('open'); });
-
-    document.querySelectorAll('.period-opt').forEach(btn => {
-        btn.addEventListener('click', e => {
+    /* ═══ PERIOD ═══ */
+    $('periodBtn').onclick=e=>{e.stopPropagation();$('periodDd').classList.toggle('open')};
+    document.addEventListener('click',e=>{if(!e.target.closest('#periodBtn'))$('periodDd').classList.remove('open')});
+    document.querySelectorAll('#periodDd button').forEach(b=>{
+        b.onclick=e=>{
             e.stopPropagation();
-            document.querySelectorAll('.period-opt').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentPeriodo = btn.dataset.periodo;
-            document.getElementById('periodLabel').textContent = PERIOD_LABELS[currentPeriodo];
-            document.getElementById('periodDropdown').classList.remove('open');
-            loadDashboard();
-        });
+            document.querySelectorAll('#periodDd button').forEach(x=>x.classList.remove('active'));
+            b.classList.add('active');
+            periodo=b.dataset.p;
+            $('periodLabel').textContent=PNAMES[periodo];
+            $('periodDd').classList.remove('open');
+            load();
+        }
     });
 
-    // ═══════════════════════════════════════════════════════════════════
-    //  LOAD
-    // ═══════════════════════════════════════════════════════════════════
-    async function loadDashboard() {
-        try {
-            const p = currentPeriodo !== 'all' ? `?periodo=${currentPeriodo}` : '';
-            const [summary, transactions, layoutData] = await Promise.all([
-                apiFetch('/summary' + p), apiFetch('/transactions' + p), apiFetch('/layout'),
-            ]);
-            cachedSummary = summary;
-            allTransactions = transactions;
-            renderSummary(summary);
-            renderTransactions(transactions);
-            renderChartDonut(summary);
-            renderChartBar(summary.evolucao);
-            renderChartCategoria(summary.categorias_gasto);
-            renderChartDaily(summary.evolucao_diaria);
-            renderProgressCircles(summary);
-            currentLayout = layoutData.layout || layoutData;
-            applyLayout(currentLayout);
-        } catch (err) { showToast('Erro: ' + err.message, 'danger'); }
-    }
+    /* ═══ SEARCH ═══ */
+    $('searchInput').oninput=e=>{
+        const q=e.target.value.toLowerCase().trim();
+        if(!q){renderTx(allTx);return}
+        renderTx(allTx.filter(t=>(t.descricao||'').toLowerCase().includes(q)||(t.categoria||'').toLowerCase().includes(q)||(t.tipo||'').includes(q)));
+    };
 
-    // ═══════════════════════════════════════════════════════════════════
-    //  RENDER SUMMARY
-    // ═══════════════════════════════════════════════════════════════════
-    function renderSummary(d) {
-        document.getElementById('saldoValor').textContent = formatBRL(d.saldo);
-        document.getElementById('rendaValor').textContent = formatBRL(d.total_renda);
-        document.getElementById('gastoValor').textContent = formatBRL(d.total_gasto);
-        document.getElementById('numTransacoes').textContent = d.num_transacoes || 0;
-        document.getElementById('mediaDiariaValor').textContent = formatBRL(d.media_diaria_gasto || 0);
-        document.getElementById('rendaProgress').textContent = formatBRL(d.total_renda);
-        document.getElementById('gastoProgress').textContent = formatBRL(d.total_gasto);
+    /* ═══ MODAL ═══ */
+    function openModal(){$('modal').classList.add('open');$('txData').value=new Date().toISOString().slice(0,10)}
+    function closeModal(){$('modal').classList.remove('open')}
+    $('modalClose').onclick=closeModal;
+    $('modal').onclick=e=>{if(e.target===$('modal'))closeModal()};
 
-        const mg = d.maior_gasto;
-        if (mg) {
-            document.getElementById('maiorGastoValor').textContent = formatBRL(mg.valor);
-            document.getElementById('maiorGastoDesc').textContent = mg.descricao || '';
-        } else {
-            document.getElementById('maiorGastoValor').textContent = '—';
-            document.getElementById('maiorGastoDesc').textContent = '';
-        }
-    }
-
-    function renderProgressCircles(d) {
-        const total = d.total_renda + d.total_gasto;
-        if (total === 0) return;
-        const pctR = Math.round((d.total_renda / total) * 100);
-        const pctG = Math.round((d.total_gasto / total) * 100);
-        const circ = 2 * Math.PI * 24; // ~150.8
-
-        const cR = document.getElementById('progressRendaCircle');
-        cR.style.strokeDashoffset = circ - (circ * pctR / 100);
-        document.getElementById('progressRendaPct').textContent = pctR + '%';
-
-        const cG = document.getElementById('progressGastoCircle');
-        cG.style.strokeDashoffset = circ - (circ * pctG / 100);
-        document.getElementById('progressGastoPct').textContent = pctG + '%';
-    }
-
-    // ═══════════════════════════════════════════════════════════════════
-    //  TABLE
-    // ═══════════════════════════════════════════════════════════════════
-    function renderTransactions(list) {
-        const tbody = document.getElementById('transactionsBody');
-        const empty = document.getElementById('emptyState');
-        if (!list || !list.length) { tbody.innerHTML = ''; empty.classList.remove('d-none'); return; }
-        empty.classList.add('d-none');
-        tbody.innerHTML = list.map(t => `
-            <tr>
-                <td class="tx-desc">${escapeHtml(t.descricao)}</td>
-                <td><span class="tx-badge cat">${escapeHtml(t.categoria || 'Outros')}</span></td>
-                <td style="white-space:nowrap">${formatDate(t.data)}</td>
-                <td><span class="tx-badge ${t.tipo}">${t.tipo === 'renda' ? '↑ Renda' : '↓ Gasto'}</span></td>
-                <td style="text-align:right;font-weight:600;color:${t.tipo === 'renda' ? 'var(--success)' : 'var(--danger)'}">${formatBRL(t.valor)}</td>
-            </tr>
-        `).join('');
-    }
-
-    document.getElementById('searchInput').addEventListener('input', e => {
-        const q = e.target.value.toLowerCase().trim();
-        if (!q) { renderTransactions(allTransactions); return; }
-        renderTransactions(allTransactions.filter(t =>
-            (t.descricao||'').toLowerCase().includes(q) || (t.categoria||'').toLowerCase().includes(q) || (t.tipo||'').includes(q)
-        ));
-    });
-
-    // ═══════════════════════════════════════════════════════════════════
-    //  CHARTS
-    // ═══════════════════════════════════════════════════════════════════
-    function renderChartDonut(s) {
-        const ctx = document.getElementById('chartDonut').getContext('2d');
-        const c = getCC();
-        if (chartDonut) chartDonut.destroy();
-        if (!s.total_renda && !s.total_gasto) { chartDonut = null; return; }
-        chartDonut = new Chart(ctx, {
-            type: 'doughnut',
-            data: { labels: ['Rendas','Gastos'], datasets: [{ data: [s.total_renda, s.total_gasto], backgroundColor: ['#22c55e','#ef4444'], borderWidth: 0, hoverOffset: 6 }] },
-            options: { responsive: true, maintainAspectRatio: true, cutout: '68%',
-                plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.label}: ${formatBRL(ctx.raw)}` } } }
-            },
-        });
-    }
-
-    function renderChartCategoria(cats) {
-        const ctx = document.getElementById('chartCategoria').getContext('2d');
-        if (chartCategoria) chartCategoria.destroy();
-        if (!cats || !cats.length) { chartCategoria = null; return; }
-        chartCategoria = new Chart(ctx, {
-            type: 'doughnut',
-            data: { labels: cats.map(c=>c.nome), datasets: [{ data: cats.map(c=>c.valor), backgroundColor: CAT_COLORS.slice(0, cats.length), borderWidth: 0, hoverOffset: 6 }] },
-            options: { responsive: true, maintainAspectRatio: true, cutout: '60%',
-                plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.label}: ${formatBRL(ctx.raw)}` } } }
-            },
-        });
-    }
-
-    function renderChartBar(evolucao) {
-        const ctx = document.getElementById('chartBar').getContext('2d');
-        const c = getCC();
-        if (chartBar) chartBar.destroy();
-        if (!evolucao || !evolucao.length) { chartBar = null; return; }
-        if (evolucao.length > 0) {
-            document.getElementById('chartBarYear').textContent = evolucao[evolucao.length-1].mes.split('-')[0];
-        }
-        chartBar = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: evolucao.map(e => formatMonth(e.mes)),
-                datasets: [
-                    { label: 'Rendas', data: evolucao.map(e=>e.renda), backgroundColor: '#22c55e', borderRadius: 6, borderSkipped: false, barPercentage: .55 },
-                    { label: 'Gastos', data: evolucao.map(e=>e.gasto), backgroundColor: '#6366f1', borderRadius: 6, borderSkipped: false, barPercentage: .55 },
-                ],
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                scales: {
-                    x: { ticks: { color: c.text, font: { size: 11 } }, grid: { display: false } },
-                    y: { ticks: { color: c.text, callback: v => { if(v >= 1000) return (v/1000)+'k'; return v; } }, grid: { color: c.grid }, border: { dash: [4,4] } },
-                },
-                plugins: {
-                    legend: { labels: { color: c.text, padding: 12, font: { size: 11 }, usePointStyle: true, pointStyle: 'circle' } },
-                    tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${formatBRL(ctx.raw)}` } },
-                },
-            },
-        });
-    }
-
-    function renderChartDaily(daily) {
-        const ctx = document.getElementById('chartDaily').getContext('2d');
-        const c = getCC();
-        if (chartDaily) chartDaily.destroy();
-        if (!daily || !daily.length) { chartDaily = null; return; }
-        const data = daily.slice(-60);
-        if (data.length > 0) {
-            document.getElementById('chartDailyYear').textContent = data[data.length-1].dia.split('-')[0];
-        }
-        const labels = data.map(e => { const p = e.dia.split('-'); return p[2]+'/'+p[1]; });
-        chartDaily = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels,
-                datasets: [
-                    { label: 'Gastos', data: data.map(e=>e.gasto), borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,.06)', fill: true, tension: .4, pointRadius: data.length > 20 ? 0 : 3, borderWidth: 2.5 },
-                    { label: 'Rendas', data: data.map(e=>e.renda), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,.06)', fill: true, tension: .4, pointRadius: data.length > 20 ? 0 : 3, borderWidth: 2.5 },
-                ],
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-                scales: {
-                    x: { ticks: { color: c.text, font: { size: 10 }, maxTicksLimit: 12 }, grid: { display: false } },
-                    y: { ticks: { color: c.text, callback: v => { if(v>=1000) return (v/1000)+'k'; return v; } }, grid: { color: c.grid }, border: { dash: [4,4] } },
-                },
-                plugins: {
-                    legend: { labels: { color: c.text, padding: 12, font: { size: 11 }, usePointStyle: true, pointStyle: 'circle' } },
-                    tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${formatBRL(ctx.raw)}` } },
-                },
-            },
-        });
-    }
-
-    // ═══════════════════════════════════════════════════════════════════
-    //  NEW TRANSACTION
-    // ═══════════════════════════════════════════════════════════════════
-    document.getElementById('txData').value = new Date().toISOString().slice(0, 10);
-
-    document.getElementById('transactionForm').addEventListener('submit', async e => {
+    $('txForm').onsubmit=async e=>{
         e.preventDefault();
-        const btn = document.getElementById('txSubmitBtn');
-        const sp = document.getElementById('txBtnSpinner');
-        btn.disabled = true; sp.classList.remove('d-none');
-        const body = {
-            tipo: document.getElementById('txTipo').value,
-            valor: parseFloat(document.getElementById('txValor').value),
-            descricao: document.getElementById('txDescricao').value.trim(),
-            data: document.getElementById('txData').value,
-            categoria: document.getElementById('txCategoria').value,
+        const btn=$('txSubmit');btn.disabled=true;btn.textContent='Salvando…';
+        const body={
+            tipo:$('txTipo').value,
+            valor:parseFloat($('txValor').value),
+            descricao:$('txDesc').value.trim(),
+            data:$('txData').value,
+            categoria:$('txCat').value
         };
-        if (!body.descricao || !body.valor || !body.data) { showToast('Preencha todos os campos.', 'warning'); btn.disabled = false; sp.classList.add('d-none'); return; }
-        try {
-            await apiFetch('/transactions', { method: 'POST', body: JSON.stringify(body) });
-            showToast('Transação salva!', 'success');
-            bootstrap.Modal.getInstance(document.getElementById('modalTransaction')).hide();
-            document.getElementById('transactionForm').reset();
-            document.getElementById('txData').value = new Date().toISOString().slice(0, 10);
-            loadDashboard();
-        } catch (err) { showToast('Erro: ' + err.message, 'danger'); }
-        finally { btn.disabled = false; sp.classList.add('d-none'); }
-    });
+        if(!body.descricao||!body.valor||!body.data){toast('Preencha todos os campos','warning');btn.disabled=false;btn.textContent='Salvar';return}
+        try{
+            await api('/transactions',{method:'POST',body:JSON.stringify(body)});
+            toast('Transação salva!');closeModal();$('txForm').reset();load();
+        }catch(err){toast(err.message,'danger')}
+        finally{btn.disabled=false;btn.textContent='Salvar'}
+    };
 
-    // ═══════════════════════════════════════════════════════════════════
-    //  THEME / LAYOUT
-    // ═══════════════════════════════════════════════════════════════════
-    function setTheme(theme, save = true) {
-        document.documentElement.setAttribute('data-bs-theme', theme);
-        document.getElementById('btnThemeLight').classList.toggle('active', theme === 'light');
-        document.getElementById('btnThemeDark').classList.toggle('active', theme === 'dark');
-        if (currentLayout) currentLayout.tema = theme;
-        if (cachedSummary) {
-            renderChartDonut(cachedSummary); renderChartBar(cachedSummary.evolucao);
-            renderChartCategoria(cachedSummary.categorias_gasto); renderChartDaily(cachedSummary.evolucao_diaria);
+    /* ═══ LOAD DATA ═══ */
+    async function load(){
+        try{
+            const p=periodo!=='all'?`?periodo=${periodo}`:'';
+            const[s,tx]=await Promise.all([api('/summary'+p),api('/transactions'+p)]);
+            summary=s;allTx=tx;
+            renderSummary(s);renderTx(tx);
+            renderChartBalance(s.evolucao_diaria);renderChartBar(s.evolucao);renderChartCat(s.categorias_gasto);renderChartDaily(s.evolucao_diaria);
+        }catch(err){toast('Erro: '+err.message,'danger')}
+    }
+
+    /* ═══ RENDER SUMMARY ═══ */
+    function renderSummary(d){
+        $('saldoVal').textContent=fmt(d.saldo);
+        // show saldo change indicator
+        if(d.total_renda>0||d.total_gasto>0){
+            const pct=d.total_renda>0?Math.round(((d.saldo)/d.total_renda)*100):0;
+            $('saldoChange').style.display='inline-flex';
+            $('saldoChange').className='balance-change '+(d.saldo>=0?'up':'down');
+            $('saldoChangeTxt').textContent=(d.saldo>=0?'+':'')+pct+'% do total de rendas';
         }
-        if (save) autoSaveLayout();
-    }
-    function applyLayout(layout) { if (layout && layout.tema) setTheme(layout.tema, false); }
-
-    function openCustomize() {
-        document.getElementById('customizePanel').style.right = '0';
-        document.getElementById('customizeOverlay').style.display = 'block';
-    }
-    function closeCustomize() {
-        document.getElementById('customizePanel').style.right = '-340px';
-        document.getElementById('customizeOverlay').style.display = 'none';
-    }
-
-    let saveTimeout = null;
-    function autoSaveLayout() { if (saveTimeout) clearTimeout(saveTimeout); saveTimeout = setTimeout(() => saveLayoutToServer(), 1000); }
-    async function saveLayoutNow() { await saveLayoutToServer(); closeCustomize(); }
-    async function saveLayoutToServer() {
-        if (!currentLayout) return;
-        const st = document.getElementById('layoutSaveStatus');
-        st.innerHTML = '<span style="color:var(--text-muted)">Salvando…</span>';
-        try { await apiFetch('/layout', { method: 'POST', body: JSON.stringify({ layout: currentLayout }) }); st.innerHTML = '<span style="color:var(--success)">✓ Salvo!</span>'; showToast('Layout salvo!', 'success'); }
-        catch { st.innerHTML = '<span style="color:var(--danger)">Erro</span>'; }
-        setTimeout(() => { st.innerHTML = ''; }, 3000);
+        $('rendaVal').textContent=fmt(d.total_renda);
+        $('gastoVal').textContent=fmt(d.total_gasto);
+        $('numTx').textContent=d.num_transacoes||0;
+        $('mediaVal').textContent=fmt(d.media_diaria_gasto||0);
+        const mg=d.maior_gasto;
+        if(mg){$('maiorGVal').textContent=fmt(mg.valor);$('maiorGDesc').textContent=mg.descricao||''}
+        else{$('maiorGVal').textContent='—';$('maiorGDesc').textContent=''}
+        const mr=d.maior_renda;
+        if(mr){$('maiorRVal').textContent=fmt(mr.valor);$('maiorRDesc').textContent=mr.descricao||''}
+        else{$('maiorRVal').textContent='—';$('maiorRDesc').textContent=''}
     }
 
-    // ═══════════════════════════════════════════════════════════════════
-    //  INIT
-    // ═══════════════════════════════════════════════════════════════════
-    loadDashboard();
-    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(() => {}); }
+    /* ═══ RENDER TABLE ═══ */
+    function renderTx(list){
+        const tb=$('txBody'),em=$('emptyState');
+        $('txCount').textContent=(list?list.length:0)+' registros';
+        if(!list||!list.length){tb.innerHTML='';em.classList.remove('d-none');em.style.display='';return}
+        em.classList.add('d-none');em.style.display='none';
+        tb.innerHTML=list.map(t=>`<tr>
+            <td><span class="tx-name"><span class="tx-dot ${t.tipo}"></span>${esc(t.descricao)}</span></td>
+            <td><span class="tx-badge cat">${esc(t.categoria||'Outros')}</span></td>
+            <td style="white-space:nowrap;color:var(--text2)">${fmtDate(t.data)}</td>
+            <td><span class="tx-badge ${t.tipo}">${t.tipo==='renda'?'↑ Renda':'↓ Gasto'}</span></td>
+            <td style="text-align:right;font-weight:600;color:${t.tipo==='renda'?'var(--green)':'var(--red)'}">${fmt(t.valor)}</td>
+        </tr>`).join('');
+    }
+
+    /* ═══ CHARTS ═══ */
+    function renderChartBalance(daily){
+        const ctx=$('chartBalance').getContext('2d');
+        if(cBalance)cBalance.destroy();
+        if(!daily||!daily.length){cBalance=null;return}
+        const data=daily.slice(-30);
+        let running=0;const vals=data.map(d=>{running+=(d.renda||0)-(d.gasto||0);return running});
+        cBalance=new Chart(ctx,{type:'line',data:{labels:data.map(d=>d.dia),datasets:[{data:vals,borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.08)',fill:true,tension:.4,pointRadius:0,borderWidth:2}]},
+            options:{responsive:true,maintainAspectRatio:false,scales:{x:{display:false},y:{display:false}},plugins:{legend:{display:false},tooltip:{enabled:false}}}});
+    }
+
+    function renderChartBar(ev){
+        const ctx=$('chartBar').getContext('2d');
+        if(cBar)cBar.destroy();
+        if(!ev||!ev.length){cBar=null;return}
+        $('barYear').textContent=ev[ev.length-1].mes.split('-')[0];
+        cBar=new Chart(ctx,{type:'bar',data:{labels:ev.map(e=>fmtMonth(e.mes)),
+            datasets:[
+                {label:'Rendas',data:ev.map(e=>e.renda),backgroundColor:'rgba(34,197,94,.7)',borderRadius:6,borderSkipped:false,barPercentage:.5},
+                {label:'Gastos',data:ev.map(e=>e.gasto),backgroundColor:'rgba(99,102,241,.7)',borderRadius:6,borderSkipped:false,barPercentage:.5}
+            ]},
+            options:{responsive:true,maintainAspectRatio:false,
+                scales:{x:{ticks:{color:CC.text,font:{size:10}},grid:{display:false}},y:{ticks:{color:CC.text,callback:v=>v>=1000?(v/1000)+'k':v},grid:{color:CC.grid},border:{dash:[3,3]}}},
+                plugins:{legend:{labels:{color:CC.text,padding:10,font:{size:10},usePointStyle:true,pointStyle:'circle'}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmt(c.raw)}`}}}}});
+    }
+
+    function renderChartCat(cats){
+        const ctx=$('chartCat').getContext('2d');
+        if(cCat)cCat.destroy();
+        if(!cats||!cats.length){cCat=null;ctx.canvas.parentElement.innerHTML='<div class="empty"><i class="bi bi-tags"></i>Sem dados</div>';return}
+        cCat=new Chart(ctx,{type:'doughnut',data:{labels:cats.map(c=>c.nome),datasets:[{data:cats.map(c=>c.valor),backgroundColor:COLORS.slice(0,cats.length),borderWidth:0,hoverOffset:5}]},
+            options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{color:CC.text,padding:6,font:{size:10},boxWidth:10}},tooltip:{callbacks:{label:c=>`${c.label}: ${fmt(c.raw)}`}}}}});
+    }
+
+    function renderChartDaily(daily){
+        const ctx=$('chartDaily').getContext('2d');
+        if(cDaily)cDaily.destroy();
+        if(!daily||!daily.length){cDaily=null;return}
+        const d=daily.slice(-45);
+        $('dailyYear').textContent=d[d.length-1].dia.split('-')[0];
+        const lb=d.map(e=>{const p=e.dia.split('-');return p[2]+'/'+p[1]});
+        cDaily=new Chart(ctx,{type:'line',data:{labels:lb,datasets:[
+            {label:'Gastos',data:d.map(e=>e.gasto),borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.06)',fill:true,tension:.4,pointRadius:d.length>20?0:2,borderWidth:2},
+            {label:'Rendas',data:d.map(e=>e.renda),borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.06)',fill:true,tension:.4,pointRadius:d.length>20?0:2,borderWidth:2}
+        ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+            scales:{x:{ticks:{color:CC.text,font:{size:9},maxTicksLimit:10},grid:{display:false}},y:{ticks:{color:CC.text,callback:v=>v>=1000?(v/1000)+'k':v},grid:{color:CC.grid},border:{dash:[3,3]}}},
+            plugins:{legend:{labels:{color:CC.text,padding:10,font:{size:10},usePointStyle:true,pointStyle:'circle'}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmt(c.raw)}`}}}}});
+    }
+
+    /* ═══ INIT ═══ */
+    load();
+    if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}
     </script>
 </body>
 </html>
