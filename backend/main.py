@@ -19,12 +19,16 @@ from supabase import create_client, Client
 load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")  # anon key — usado para auth (login/register)
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", SUPABASE_KEY)  # service_role key — usado para queries (ignora RLS)
 
 if not all([SUPABASE_URL, SUPABASE_KEY]):
     raise RuntimeError("Variáveis SUPABASE_URL e SUPABASE_KEY são obrigatórias no .env")
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+# Cliente para autenticação (anon key)
+supabase_auth: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+# Cliente para dados (service_role key — ignora RLS)
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 app = FastAPI(title="Dashboard Financeiro", version="1.0.0")
 
@@ -88,7 +92,7 @@ def get_current_user_id(authorization: str = Header(...)) -> str:
 def register(body: AuthRequest):
     """Cria uma nova conta no Supabase Auth."""
     try:
-        res = supabase.auth.sign_up({"email": body.email, "password": body.password})
+        res = supabase_auth.auth.sign_up({"email": body.email, "password": body.password})
         if res.user is None:
             raise HTTPException(status_code=400, detail="Erro ao criar conta. Verifique os dados.")
         return {"message": "Conta criada com sucesso! Verifique seu e-mail se necessário.", "user_id": res.user.id}
@@ -100,7 +104,7 @@ def register(body: AuthRequest):
 def login(body: AuthRequest):
     """Faz login e retorna o token JWT."""
     try:
-        res = supabase.auth.sign_in_with_password({"email": body.email, "password": body.password})
+        res = supabase_auth.auth.sign_in_with_password({"email": body.email, "password": body.password})
         if res.session is None:
             raise HTTPException(status_code=401, detail="Credenciais inválidas")
         return {
