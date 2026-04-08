@@ -4,10 +4,11 @@ Servidor principal com autenticação Supabase e endpoints REST.
 """
 
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
+from typing import Optional
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Depends, Header, Request
+from fastapi import FastAPI, HTTPException, Depends, Header, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from jose import jwt
@@ -63,6 +64,7 @@ class TransactionCreate(BaseModel):
     tipo: str = Field(pattern=r"^(renda|gasto)$")
     valor: float = Field(gt=0)
     descricao: str = Field(min_length=1, max_length=200)
+    categoria: str = Field(default="Outros", max_length=50)
     data: str  # formato YYYY-MM-DD
 
 class LayoutSave(BaseModel):
@@ -119,15 +121,34 @@ def login(body: AuthRequest):
 # ── Endpoints de Transações ──────────────────────────────────────────────────
 
 @app.get("/transactions")
-def list_transactions(user_id: str = Depends(get_current_user_id)):
-    """Lista todas as transações do usuário autenticado, ordenadas por data desc."""
-    res = (
-        supabase.table("transactions")
-        .select("*")
-        .eq("user_id", user_id)
-        .order("data", desc=True)
-        .execute()
-    )
+def list_transactions(
+    user_id: str = Depends(get_current_user_id),
+    periodo: Optional[str] = Query(None, pattern=r"^(7d|30d|90d|12m|all)$"),
+    data_inicio: Optional[str] = Query(None),
+    data_fim: Optional[str] = Query(None),
+):
+    """Lista transações do usuário com filtros opcionais de período."""
+    query = supabase.table("transactions").select("*").eq("user_id", user_id)
+
+    # Filtro por período predefinido
+    if periodo and periodo != "all":
+        hoje = datetime.now().date()
+        if periodo == "7d":
+            inicio = hoje - timedelta(days=7)
+        elif periodo == "30d":
+            inicio = hoje - timedelta(days=30)
+        elif periodo == "90d":
+            inicio = hoje - timedelta(days=90)
+        elif periodo == "12m":
+            inicio = hoje - timedelta(days=365)
+        query = query.gte("data", inicio.isoformat())
+    elif data_inicio:
+        query = query.gte("data", data_inicio)
+
+    if data_fim:
+        query = query.lte("data", data_fim)
+
+    res = query.order("data", desc=True).execute()
     return res.data
 
 @app.post("/transactions")
@@ -145,6 +166,7 @@ def create_transaction(body: TransactionCreate, user_id: str = Depends(get_curre
         "valor": body.valor,
         "descricao": body.descricao,
         "data": body.data,
+        "categoria": body.categoria,
     }
     res = supabase.table("transactions").insert(row).execute()
     if not res.data:
@@ -154,38 +176,84 @@ def create_transaction(body: TransactionCreate, user_id: str = Depends(get_curre
 # ── Endpoint de Resumo ───────────────────────────────────────────────────────
 
 @app.get("/summary")
-def get_summary(user_id: str = Depends(get_current_user_id)):
-    """Retorna total de rendas, gastos e saldo do usuário."""
-    res = (
-        supabase.table("transactions")
-        .select("tipo, valor, data")
-        .eq("user_id", user_id)
-        .execute()
-    )
+def get_summary(
+    user_id: str = Depends(get_current_user_id),
+    periodo: Optional[str] = Query(None, pattern=r"^(7d|30d|90d|12m|all)$"),
+):
+    """Retorna resumo financeiro completo com agrupamentos para gráficos."""
+    query = supabase.table("transactions").select("tipo, valor, data, categoria, descricao").eq("user_id", user_id)
+
+    hoje = datetime.now().date()
+    if periodo and periodo != "all":
+        if periodo == "7d":
+            inicio = hoje - timedelta(days=7)
+        elif periodo == "30d":
+            inicio = hoje - timedelta(days=30)
+        elif periodo == "90d":
+            inicio = hoje - timedelta(days=90)
+        elif periodo == "12m":
+            inicio = hoje - timedelta(days=365)
+        query = query.gte("data", inicio.isoformat())
+
+    res = query.execute()
+
     total_renda = 0.0
     total_gasto = 0.0
-    # Agrupamento mensal para gráfico de evolução
     monthly: dict[str, dict[str, float]] = {}
+    daily: dict[str, dict[str, float]] = {}
+    categorias_gasto: dict[str, float] = {}
+    categorias_renda: dict[str, float] = {}
+    maior_gasto = None
+    maior_renda = None
 
     for t in res.data:
-        mes = t["data"][:7]  # YYYY-MM
+        data_str = t["data"][:10]  # YYYY-MM-DD (remove timestamp se existir)
+        mes = data_str[:7]  # YYYY-MM
+        cat = t.get("categoria") or "Outros"
+
         if mes not in monthly:
             monthly[mes] = {"renda": 0.0, "gasto": 0.0}
+        if data_str not in daily:
+            daily[data_str] = {"renda": 0.0, "gasto": 0.0}
+
         if t["tipo"] == "renda":
             total_renda += t["valor"]
             monthly[mes]["renda"] += t["valor"]
+            daily[data_str]["renda"] += t["valor"]
+            categorias_renda[cat] = categorias_renda.get(cat, 0.0) + t["valor"]
+            if maior_renda is None or t["valor"] > maior_renda["valor"]:
+                maior_renda = {"valor": t["valor"], "descricao": t.get("descricao", ""), "data": data_str}
         else:
             total_gasto += t["valor"]
             monthly[mes]["gasto"] += t["valor"]
+            daily[data_str]["gasto"] += t["valor"]
+            categorias_gasto[cat] = categorias_gasto.get(cat, 0.0) + t["valor"]
+            if maior_gasto is None or t["valor"] > maior_gasto["valor"]:
+                maior_gasto = {"valor": t["valor"], "descricao": t.get("descricao", ""), "data": data_str}
 
-    # Ordena por mês
     evolucao = [{"mes": k, **v} for k, v in sorted(monthly.items())]
+    evolucao_diaria = [{"dia": k, **v} for k, v in sorted(daily.items())]
+
+    # Top categorias (ordenadas por valor)
+    top_cat_gasto = sorted(categorias_gasto.items(), key=lambda x: x[1], reverse=True)
+    top_cat_renda = sorted(categorias_renda.items(), key=lambda x: x[1], reverse=True)
+
+    # Média diária de gasto
+    dias_com_gasto = len([d for d in daily.values() if d["gasto"] > 0])
+    media_diaria_gasto = total_gasto / dias_com_gasto if dias_com_gasto > 0 else 0.0
 
     return {
         "total_renda": total_renda,
         "total_gasto": total_gasto,
         "saldo": total_renda - total_gasto,
+        "num_transacoes": len(res.data),
+        "media_diaria_gasto": round(media_diaria_gasto, 2),
+        "maior_gasto": maior_gasto,
+        "maior_renda": maior_renda,
         "evolucao": evolucao,
+        "evolucao_diaria": evolucao_diaria,
+        "categorias_gasto": [{"nome": k, "valor": v} for k, v in top_cat_gasto],
+        "categorias_renda": [{"nome": k, "valor": v} for k, v in top_cat_renda],
     }
 
 # ── Endpoints de Layout ─────────────────────────────────────────────────────
@@ -259,25 +327,6 @@ def save_layout(body: LayoutSave, user_id: str = Depends(get_current_user_id)):
         pass
 
     return {"id": None, "user_id": user_id, "layout": body.layout}
-
-# ── Debug: Testar token (remover em produção) ───────────────────────────────
-
-@app.get("/debug-token")
-def debug_token(authorization: str = Header(...)):
-    """Endpoint temporário para debugar problemas com JWT."""
-    token = authorization.replace("Bearer ", "") if authorization.startswith("Bearer ") else authorization
-    # Decodifica SEM verificar para ver o conteúdo
-    try:
-        unverified = jwt.get_unverified_claims(token)
-    except Exception as e:
-        return {"error": f"Token malformado: {str(e)}"}
-
-    # Tenta verificar
-    try:
-        verified = jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"], options={"verify_aud": False})
-        return {"status": "valid", "claims": verified}
-    except JWTError as e:
-        return {"status": "invalid", "reason": str(e), "unverified_claims": unverified}
 
 # ── Health Check ─────────────────────────────────────────────────────────────
 

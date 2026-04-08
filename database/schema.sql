@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     tipo VARCHAR(10) NOT NULL CHECK (tipo IN ('renda', 'gasto')),
     valor NUMERIC(12, 2) NOT NULL CHECK (valor > 0),
     descricao VARCHAR(200) NOT NULL,
+    categoria VARCHAR(50) DEFAULT 'Outros',
     data DATE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT now()
 );

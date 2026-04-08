@@ -4,275 +4,258 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Financeiro</title>
-    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-    <!-- PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4f46e5">
     <style>
         :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --bg: #f3f4f6;
-            --card-bg: #ffffff;
-            --text: #1f2937;
-            --text-muted: #6b7280;
-            --border: #e5e7eb;
-            --success: #10b981;
-            --danger: #ef4444;
+            --primary: #4f46e5; --primary-hover: #4338ca;
+            --bg: #f1f5f9; --card-bg: #ffffff; --text: #0f172a;
+            --text-muted: #64748b; --border: #e2e8f0;
+            --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --info: #3b82f6;
         }
         [data-bs-theme="dark"] {
-            --bg: #111827;
-            --card-bg: #1f2937;
-            --text: #f9fafb;
-            --text-muted: #9ca3af;
-            --border: #374151;
+            --bg: #0f172a; --card-bg: #1e293b; --text: #f1f5f9;
+            --text-muted: #94a3b8; --border: #334155;
         }
         * { box-sizing: border-box; }
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            transition: background 0.3s, color 0.3s;
-        }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; transition: background .3s, color .3s; }
+
         /* Navbar */
-        .navbar-custom {
-            background: var(--card-bg);
-            border-bottom: 1px solid var(--border);
-            padding: 0.75rem 1rem;
-        }
-        .navbar-brand-text { font-weight: 700; color: var(--primary); font-size: 1.2rem; }
-        .user-email { color: var(--text-muted); font-size: 0.85rem; }
+        .navbar-custom { background: var(--card-bg); border-bottom: 1px solid var(--border); padding: .6rem 1rem; }
+        .navbar-brand-text { font-weight: 700; color: var(--primary); font-size: 1.15rem; }
 
         /* Cards */
-        .dash-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 1.25rem;
-            transition: box-shadow 0.2s, background 0.3s;
-        }
-        .dash-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
-        .dash-card h6 { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
-        .dash-card .big-number { font-size: 1.8rem; font-weight: 700; }
+        .dash-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem; transition: box-shadow .2s, background .3s; }
+        .dash-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.06); }
+        .dash-card h6 { color: var(--text-muted); font-size: .75rem; text-transform: uppercase; letter-spacing: .5px; margin-bottom: .35rem; }
+        .big-number { font-size: 1.55rem; font-weight: 700; }
+        .sub-info { font-size: .78rem; color: var(--text-muted); margin-top: .2rem; }
         .text-renda { color: var(--success); }
         .text-gasto { color: var(--danger); }
         .text-saldo { color: var(--primary); }
+        .text-warning-custom { color: var(--warning); }
+        .text-info-custom { color: var(--info); }
+        .icon-circle { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+        .icon-circle.green { background: rgba(16,185,129,.12); color: var(--success); }
+        .icon-circle.red { background: rgba(239,68,68,.12); color: var(--danger); }
+        .icon-circle.blue { background: rgba(79,70,229,.12); color: var(--primary); }
+        .icon-circle.amber { background: rgba(245,158,11,.12); color: var(--warning); }
+        .icon-circle.cyan { background: rgba(59,130,246,.12); color: var(--info); }
 
-        /* Tabela */
-        .table-transactions { font-size: 0.9rem; }
-        .table-transactions th { font-weight: 600; color: var(--text-muted); border-bottom-width: 1px; }
+        /* Period selector */
+        .period-selector .btn { font-size: .82rem; border-radius: 20px; padding: .3rem .85rem; font-weight: 500; }
+        .period-selector .btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+        /* Table */
+        .table-transactions { font-size: .85rem; }
+        .table-transactions th { font-weight: 600; color: var(--text-muted); border-bottom-width: 1px; font-size: .78rem; text-transform: uppercase; }
         .badge-renda { background: #d1fae5; color: #065f46; }
         .badge-gasto { background: #fee2e2; color: #991b1b; }
+        .badge-cat { background: var(--bg); color: var(--text-muted); font-weight: 500; font-size: .75rem; }
         [data-bs-theme="dark"] .badge-renda { background: #065f46; color: #d1fae5; }
         [data-bs-theme="dark"] .badge-gasto { background: #991b1b; color: #fee2e2; }
+        [data-bs-theme="dark"] .badge-cat { background: #334155; color: #94a3b8; }
+
+        /* Search */
+        .search-box { max-width: 260px; }
+        .search-box .form-control { font-size: .85rem; border-radius: 20px; padding-left: 2.2rem; }
+        .search-box .bi { position: absolute; left: .75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
 
         /* Modal */
         .modal-content { border-radius: 14px; background: var(--card-bg); color: var(--text); }
-        .form-control, .form-select {
-            background: var(--bg);
-            color: var(--text);
-            border-color: var(--border);
-        }
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 0.2rem rgba(79,70,229,0.15);
-            background: var(--bg);
-            color: var(--text);
-        }
+        .form-control, .form-select { background: var(--bg); color: var(--text); border-color: var(--border); }
+        .form-control:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 .2rem rgba(79,70,229,.15); background: var(--bg); color: var(--text); }
 
-        /* Botões */
         .btn-primary { background: var(--primary); border-color: var(--primary); border-radius: 10px; font-weight: 600; }
         .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
         .btn-outline-secondary { border-radius: 10px; }
 
-        /* Widget drag handle */
-        .widget-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.75rem;
-        }
-        .widget-header .drag-handle {
-            cursor: grab;
-            color: var(--text-muted);
-            font-size: 1.1rem;
-        }
+        /* Customize panel */
+        .customize-panel { position: fixed; top: 0; right: -360px; width: 340px; max-width: 90vw; height: 100vh; background: var(--card-bg); border-left: 1px solid var(--border); z-index: 1060; transition: right .3s ease; overflow-y: auto; padding: 1.5rem; box-shadow: -4px 0 20px rgba(0,0,0,.1); }
+        .customize-panel.open { right: 0; }
+        .customize-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 1055; display: none; }
+        .customize-overlay.open { display: block; }
+        .widget-sort-item { display: flex; align-items: center; gap: .75rem; padding: .75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; margin-bottom: .5rem; cursor: grab; }
+        .widget-sort-item:active { cursor: grabbing; }
 
-        /* Skeleton loading */
-        .skeleton {
-            background: linear-gradient(90deg, var(--border) 25%, transparent 50%, var(--border) 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: 8px;
-            height: 1.5rem;
-        }
+        .skeleton { background: linear-gradient(90deg, var(--border) 25%, transparent 50%, var(--border) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; height: 1.5rem; }
         @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-        /* Responsividade extra */
-        @media (max-width: 576px) {
-            .dash-card .big-number { font-size: 1.4rem; }
-            .dash-card { padding: 1rem; }
-        }
-
-        /* Toast container */
         .toast-container { z-index: 1080; }
+        .no-data-msg { text-align: center; color: var(--text-muted); padding: 2rem 0; font-size: .9rem; }
+        .no-data-msg i { font-size: 2rem; display: block; margin-bottom: .5rem; opacity: .5; }
 
-        /* Personalização - painel */
-        .customize-panel {
-            position: fixed;
-            top: 0; right: -360px;
-            width: 340px; max-width: 90vw;
-            height: 100vh;
-            background: var(--card-bg);
-            border-left: 1px solid var(--border);
-            z-index: 1060;
-            transition: right 0.3s ease;
-            overflow-y: auto;
-            padding: 1.5rem;
-            box-shadow: -4px 0 20px rgba(0,0,0,0.1);
+        @media (max-width: 576px) {
+            .big-number { font-size: 1.25rem; }
+            .dash-card { padding: .85rem; }
+            .search-box { max-width: 100%; }
         }
-        .customize-panel.open { right: 0; }
-        .customize-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.4);
-            z-index: 1055;
-            display: none;
-        }
-        .customize-overlay.open { display: block; }
-
-        .widget-sort-item {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            margin-bottom: 0.5rem;
-            cursor: grab;
-        }
-        .widget-sort-item:active { cursor: grabbing; }
-        .widget-sort-item .bi { font-size: 1.2rem; color: var(--text-muted); }
     </style>
 </head>
 <body>
-    <!-- ─── Navbar ────────────────────────────────────────────── -->
+    <!-- Navbar -->
     <nav class="navbar-custom d-flex align-items-center justify-content-between flex-wrap gap-2">
         <div class="d-flex align-items-center gap-2">
-            <span style="font-size:1.5rem">💰</span>
+            <span style="font-size:1.4rem">💰</span>
             <span class="navbar-brand-text">Dashboard Financeiro</span>
         </div>
         <div class="d-flex align-items-center gap-2 flex-wrap">
-            <span class="user-email d-none d-sm-inline" id="userEmail"></span>
-            <button class="btn btn-sm btn-outline-secondary" onclick="openCustomize()" title="Personalizar">
-                <i class="bi bi-gear"></i>
-            </button>
-            <button class="btn btn-sm btn-outline-secondary" onclick="logout()" title="Sair">
-                <i class="bi bi-box-arrow-right"></i> Sair
-            </button>
+            <span class="text-muted d-none d-sm-inline" style="font-size:.82rem" id="userEmail"></span>
+            <button class="btn btn-sm btn-outline-secondary" onclick="openCustomize()" title="Personalizar"><i class="bi bi-gear"></i></button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="logout()" title="Sair"><i class="bi bi-box-arrow-right"></i></button>
         </div>
     </nav>
 
-    <!-- ─── Conteúdo Principal ────────────────────────────────── -->
-    <div class="container-fluid py-3 px-3 px-md-4" id="dashboardContainer">
-        <!-- Linha de Resumo -->
+    <div class="container-fluid py-3 px-3 px-md-4">
+        <!-- Period Selector -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div class="period-selector btn-group" role="group">
+                <button class="btn btn-outline-secondary" data-periodo="7d">7 dias</button>
+                <button class="btn btn-outline-secondary" data-periodo="30d">30 dias</button>
+                <button class="btn btn-outline-secondary" data-periodo="90d">90 dias</button>
+                <button class="btn btn-outline-secondary" data-periodo="12m">12 meses</button>
+                <button class="btn btn-outline-secondary active" data-periodo="all">Tudo</button>
+            </div>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalTransaction">
+                <i class="bi bi-plus-lg"></i> Nova Transação
+            </button>
+        </div>
+
+        <!-- Summary Cards (6) -->
         <div class="row g-3 mb-3" id="summaryRow">
-            <div class="col-12 col-sm-4" id="widget-saldo">
-                <div class="dash-card text-center">
-                    <h6><i class="bi bi-wallet2"></i> Saldo Total</h6>
-                    <div class="big-number text-saldo" id="saldoValor">
-                        <div class="skeleton mx-auto" style="width:60%;height:2rem"></div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="dash-card">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <div class="icon-circle blue"><i class="bi bi-wallet2"></i></div>
+                        <h6 class="mb-0">Saldo</h6>
+                    </div>
+                    <div class="big-number text-saldo" id="saldoValor"><div class="skeleton" style="width:80%"></div></div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="dash-card">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <div class="icon-circle green"><i class="bi bi-arrow-up-circle"></i></div>
+                        <h6 class="mb-0">Rendas</h6>
+                    </div>
+                    <div class="big-number text-renda" id="rendaValor"><div class="skeleton" style="width:80%"></div></div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="dash-card">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <div class="icon-circle red"><i class="bi bi-arrow-down-circle"></i></div>
+                        <h6 class="mb-0">Gastos</h6>
+                    </div>
+                    <div class="big-number text-gasto" id="gastoValor"><div class="skeleton" style="width:80%"></div></div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="dash-card">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <div class="icon-circle amber"><i class="bi bi-calendar-day"></i></div>
+                        <h6 class="mb-0">Média/Dia</h6>
+                    </div>
+                    <div class="big-number text-warning-custom" id="mediaDiariaValor"><div class="skeleton" style="width:80%"></div></div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="dash-card">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <div class="icon-circle cyan"><i class="bi bi-receipt"></i></div>
+                        <h6 class="mb-0">Transações</h6>
+                    </div>
+                    <div class="big-number text-info-custom" id="numTransacoes"><div class="skeleton" style="width:60%"></div></div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="dash-card">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <div class="icon-circle red"><i class="bi bi-exclamation-triangle"></i></div>
+                        <h6 class="mb-0">Maior Gasto</h6>
+                    </div>
+                    <div class="big-number text-gasto" id="maiorGastoValor" style="font-size:1.2rem"><div class="skeleton" style="width:80%"></div></div>
+                    <div class="sub-info" id="maiorGastoDesc"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 1: Donut + Bar -->
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-md-4">
+                <div class="dash-card">
+                    <h6><i class="bi bi-pie-chart"></i> Renda vs Gasto</h6>
+                    <div style="position:relative;height:260px">
+                        <canvas id="chartDonut"></canvas>
                     </div>
                 </div>
             </div>
-            <div class="col-12 col-sm-4" id="widget-renda-total">
-                <div class="dash-card text-center">
-                    <h6><i class="bi bi-arrow-up-circle"></i> Total Rendas</h6>
-                    <div class="big-number text-renda" id="rendaValor">
-                        <div class="skeleton mx-auto" style="width:60%;height:2rem"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12 col-sm-4" id="widget-gasto-total">
-                <div class="dash-card text-center">
-                    <h6><i class="bi bi-arrow-down-circle"></i> Total Gastos</h6>
-                    <div class="big-number text-gasto" id="gastoValor">
-                        <div class="skeleton mx-auto" style="width:60%;height:2rem"></div>
+            <div class="col-12 col-md-8">
+                <div class="dash-card">
+                    <h6><i class="bi bi-bar-chart"></i> Evolução Mensal</h6>
+                    <div style="position:relative;height:260px">
+                        <canvas id="chartBar"></canvas>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Gráficos -->
-        <div class="row g-3 mb-3" id="chartsRow">
-            <div class="col-12 col-md-6" id="widget-grafico_pizza">
+        <!-- Charts Row 2: Category + Daily -->
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-md-5">
                 <div class="dash-card">
-                    <div class="widget-header">
-                        <h6 class="mb-0"><i class="bi bi-pie-chart"></i> Renda vs Gasto</h6>
-                    </div>
-                    <div style="position:relative;height:260px">
-                        <canvas id="chartPizza"></canvas>
+                    <h6><i class="bi bi-tags"></i> Gastos por Categoria</h6>
+                    <div style="position:relative;height:280px">
+                        <canvas id="chartCategoria"></canvas>
                     </div>
                 </div>
             </div>
-            <div class="col-12 col-md-6" id="widget-grafico_linha">
+            <div class="col-12 col-md-7">
                 <div class="dash-card">
-                    <div class="widget-header">
-                        <h6 class="mb-0"><i class="bi bi-graph-up"></i> Evolução Mensal</h6>
-                    </div>
-                    <div style="position:relative;height:260px">
-                        <canvas id="chartLinha"></canvas>
+                    <h6><i class="bi bi-graph-up"></i> Tendência Diária</h6>
+                    <div style="position:relative;height:280px">
+                        <canvas id="chartDaily"></canvas>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Transações -->
-        <div class="row g-3" id="transactionsRow">
-            <div class="col-12" id="widget-transacoes">
-                <div class="dash-card">
-                    <div class="widget-header">
-                        <h6 class="mb-0"><i class="bi bi-list-ul"></i> Transações</h6>
-                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalTransaction">
-                            <i class="bi bi-plus-lg"></i> Nova
-                        </button>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-transactions align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Data</th>
-                                    <th>Descrição</th>
-                                    <th>Tipo</th>
-                                    <th class="text-end">Valor</th>
-                                </tr>
-                            </thead>
-                            <tbody id="transactionsBody">
-                                <tr>
-                                    <td colspan="4" class="text-center py-4">
-                                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-                                        <span class="ms-2">Carregando…</span>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <p class="text-center text-muted mt-3 d-none" id="emptyState">
-                        <i class="bi bi-inbox" style="font-size:2rem"></i><br>
-                        Nenhuma transação ainda. Clique em <strong>+ Nova</strong> para começar!
-                    </p>
+        <!-- Transactions Table -->
+        <div class="dash-card">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                <h6 class="mb-0"><i class="bi bi-list-ul"></i> Transações</h6>
+                <div class="search-box position-relative">
+                    <i class="bi bi-search"></i>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Buscar transação…">
                 </div>
             </div>
+            <div class="table-responsive">
+                <table class="table table-transactions align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Descrição</th>
+                            <th>Categoria</th>
+                            <th>Tipo</th>
+                            <th class="text-end">Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsBody">
+                        <tr><td colspan="5" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div> <span class="ms-2">Carregando…</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-center text-muted mt-3 d-none" id="emptyState">
+                <i class="bi bi-inbox" style="font-size:2rem"></i><br>
+                Nenhuma transação ainda. Clique em <strong>+ Nova Transação</strong> para começar!
+            </p>
         </div>
     </div>
 
-    <!-- ─── Modal: Nova Transação ─────────────────────────────── -->
+    <!-- Modal: Nova Transação -->
     <div class="modal fade" id="modalTransaction" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -282,28 +265,47 @@
                 </div>
                 <div class="modal-body">
                     <form id="transactionForm" novalidate>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Tipo</label>
-                            <select class="form-select" id="txTipo" required>
-                                <option value="renda">💰 Renda</option>
-                                <option value="gasto">💸 Gasto</option>
-                            </select>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <label class="form-label fw-semibold">Tipo</label>
+                                <select class="form-select" id="txTipo" required>
+                                    <option value="renda">💰 Renda</option>
+                                    <option value="gasto">💸 Gasto</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-semibold">Valor (R$)</label>
+                                <input type="number" class="form-control" id="txValor" min="0.01" step="0.01" placeholder="0,00" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Descrição</label>
+                                <input type="text" class="form-control" id="txDescricao" maxlength="200" placeholder="Ex: Salário, Aluguel…" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-semibold">Categoria</label>
+                                <select class="form-select" id="txCategoria">
+                                    <option value="Alimentação">🍔 Alimentação</option>
+                                    <option value="Transporte">🚗 Transporte</option>
+                                    <option value="Moradia">🏠 Moradia</option>
+                                    <option value="Saúde">💊 Saúde</option>
+                                    <option value="Educação">📚 Educação</option>
+                                    <option value="Lazer">🎮 Lazer</option>
+                                    <option value="Salário">💼 Salário</option>
+                                    <option value="Freelance">💻 Freelance</option>
+                                    <option value="Investimentos">📈 Investimentos</option>
+                                    <option value="Compras">🛒 Compras</option>
+                                    <option value="Contas">📄 Contas</option>
+                                    <option value="Outros" selected>📦 Outros</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-semibold">Data</label>
+                                <input type="date" class="form-control" id="txData" required>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Valor (R$)</label>
-                            <input type="number" class="form-control" id="txValor" min="0.01" step="0.01" placeholder="0,00" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Descrição</label>
-                            <input type="text" class="form-control" id="txDescricao" maxlength="200" placeholder="Ex: Salário, Aluguel…" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Data</label>
-                            <input type="date" class="form-control" id="txData" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100" id="txSubmitBtn">
+                        <button type="submit" class="btn btn-primary w-100 mt-3" id="txSubmitBtn">
                             <span id="txBtnText">Salvar</span>
-                            <span id="txBtnSpinner" class="spinner-border spinner-border-sm d-none ms-2" role="status"></span>
+                            <span id="txBtnSpinner" class="spinner-border spinner-border-sm d-none ms-2"></span>
                         </button>
                     </form>
                 </div>
@@ -311,43 +313,30 @@
         </div>
     </div>
 
-    <!-- ─── Painel de Personalização ──────────────────────────── -->
+    <!-- Painel Personalização -->
     <div class="customize-overlay" id="customizeOverlay" onclick="closeCustomize()"></div>
     <div class="customize-panel" id="customizePanel">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h5 class="fw-bold mb-0"><i class="bi bi-palette"></i> Personalizar</h5>
-            <button class="btn btn-sm btn-outline-secondary" onclick="closeCustomize()">
-                <i class="bi bi-x-lg"></i>
-            </button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="closeCustomize()"><i class="bi bi-x-lg"></i></button>
         </div>
-
-        <!-- Tema -->
         <div class="mb-4">
             <label class="form-label fw-semibold">Tema</label>
             <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-outline-secondary flex-fill" id="btnThemeLight" onclick="setTheme('light')">
-                    <i class="bi bi-sun"></i> Claro
-                </button>
-                <button class="btn btn-sm btn-outline-secondary flex-fill" id="btnThemeDark" onclick="setTheme('dark')">
-                    <i class="bi bi-moon-stars"></i> Escuro
-                </button>
+                <button class="btn btn-sm btn-outline-secondary flex-fill" id="btnThemeLight" onclick="setTheme('light')"><i class="bi bi-sun"></i> Claro</button>
+                <button class="btn btn-sm btn-outline-secondary flex-fill" id="btnThemeDark" onclick="setTheme('dark')"><i class="bi bi-moon-stars"></i> Escuro</button>
             </div>
         </div>
-
-        <!-- Ordem dos Widgets -->
         <div class="mb-4">
             <label class="form-label fw-semibold">Ordem dos Widgets</label>
-            <p class="text-muted" style="font-size:0.8rem">Arraste para reordenar</p>
+            <p class="text-muted" style="font-size:.8rem">Arraste para reordenar</p>
             <div id="widgetSortList"></div>
         </div>
-
-        <button class="btn btn-primary w-100" onclick="saveLayoutNow()">
-            <i class="bi bi-check-lg"></i> Salvar Layout
-        </button>
-        <div id="layoutSaveStatus" class="text-center mt-2" style="font-size:0.85rem"></div>
+        <button class="btn btn-primary w-100" onclick="saveLayoutNow()"><i class="bi bi-check-lg"></i> Salvar Layout</button>
+        <div id="layoutSaveStatus" class="text-center mt-2" style="font-size:.85rem"></div>
     </div>
 
-    <!-- ─── Toast ────────────────────────────────────────────── -->
+    <!-- Toast -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3">
         <div id="appToast" class="toast align-items-center border-0" role="alert">
             <div class="d-flex">
@@ -357,34 +346,37 @@
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="config.js"></script>
     <script>
     // ═══════════════════════════════════════════════════════════════════
-    //  ESTADO GLOBAL
+    //  ESTADO
     // ═══════════════════════════════════════════════════════════════════
     const TOKEN = localStorage.getItem('access_token');
     const USER_EMAIL = localStorage.getItem('user_email');
-
-    // Redireciona se não autenticado
     if (!TOKEN) { window.location.href = 'index.html'; }
-
     document.getElementById('userEmail').textContent = USER_EMAIL || '';
 
+    let currentPeriodo = 'all';
     let currentLayout = null;
-    let chartPizzaInstance = null;
-    let chartLinhaInstance = null;
+    let allTransactions = [];
+    let cachedSummary = null;
+
+    // Chart instances
+    let chartDonut = null, chartBar = null, chartCategoria = null, chartDaily = null;
+
+    // Paleta de cores para categorias
+    const CAT_COLORS = [
+        '#6366f1','#f43f5e','#10b981','#f59e0b','#3b82f6',
+        '#8b5cf6','#ec4899','#14b8a6','#f97316','#06b6d4',
+        '#84cc16','#a855f7',
+    ];
 
     // ═══════════════════════════════════════════════════════════════════
     //  UTILITÁRIOS
     // ═══════════════════════════════════════════════════════════════════
-
     function apiHeaders() {
-        return {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + TOKEN,
-        };
+        return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN };
     }
 
     async function apiFetch(path, options = {}) {
@@ -393,21 +385,8 @@
             headers: { ...apiHeaders(), ...(options.headers || {}) },
         });
         if (res.status === 401) {
-            const err = await res.json().catch(() => ({}));
-            console.error('401 em', path, '—', JSON.stringify(err));
-            // Tenta debug do token
-            try {
-                const debug = await fetch(APP_CONFIG.API_URL + '/debug-token', {
-                    headers: apiHeaders(),
-                });
-                const debugData = await debug.json();
-                console.error('Debug token:', JSON.stringify(debugData));
-            } catch(e) {}
             showToast('Sessão expirada. Faça login novamente.', 'danger');
-            setTimeout(() => {
-                localStorage.clear();
-                window.location.href = 'index.html';
-            }, 3000);
+            setTimeout(() => { localStorage.clear(); window.location.href = 'index.html'; }, 2000);
             return;
         }
         if (!res.ok) {
@@ -417,203 +396,261 @@
         return res.json();
     }
 
-    function formatBRL(value) {
-        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    function formatBRL(v) {
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
     }
 
     function formatDate(dateStr) {
-        const [y, m, d] = dateStr.split('-');
-        return `${d}/${m}/${y}`;
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        if (isNaN(d)) return dateStr;
+        return d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+    }
+
+    function formatMonth(mesStr) {
+        const [y, m] = mesStr.split('-');
+        const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+        return meses[parseInt(m) - 1] + '/' + y.slice(2);
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str || '';
+        return div.innerHTML;
     }
 
     function showToast(msg, type = 'success') {
         const toast = document.getElementById('appToast');
-        const body = document.getElementById('toastBody');
         toast.className = `toast align-items-center border-0 text-bg-${type}`;
-        body.textContent = msg;
+        document.getElementById('toastBody').textContent = msg;
         bootstrap.Toast.getOrCreateInstance(toast).show();
     }
 
-    function logout() {
-        localStorage.clear();
-        window.location.href = 'index.html';
+    function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+
+    function getChartColors() {
+        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        return { text: isDark ? '#e2e8f0' : '#334155', grid: isDark ? '#334155' : '#e2e8f0' };
     }
+
+    // ═══════════════════════════════════════════════════════════════════
+    //  PERÍODO
+    // ═══════════════════════════════════════════════════════════════════
+    document.querySelectorAll('.period-selector .btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.period-selector .btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentPeriodo = btn.dataset.periodo;
+            loadDashboard();
+        });
+    });
 
     // ═══════════════════════════════════════════════════════════════════
     //  CARREGAR DADOS
     // ═══════════════════════════════════════════════════════════════════
-
     async function loadDashboard() {
         try {
-            // Busca tudo em paralelo
+            const periodoParam = currentPeriodo !== 'all' ? `?periodo=${currentPeriodo}` : '';
             const [summary, transactions, layoutData] = await Promise.all([
-                apiFetch('/summary'),
-                apiFetch('/transactions'),
+                apiFetch('/summary' + periodoParam),
+                apiFetch('/transactions' + periodoParam),
                 apiFetch('/layout'),
             ]);
 
+            cachedSummary = summary;
+            allTransactions = transactions;
+
             renderSummary(summary);
             renderTransactions(transactions);
-            renderChartPizza(summary);
-            renderChartLinha(summary.evolucao);
+            renderChartDonut(summary);
+            renderChartBar(summary.evolucao);
+            renderChartCategoria(summary.categorias_gasto);
+            renderChartDaily(summary.evolucao_diaria);
 
-            // Layout
             currentLayout = layoutData.layout || layoutData;
             applyLayout(currentLayout);
-
         } catch (err) {
             showToast('Erro ao carregar dados: ' + err.message, 'danger');
         }
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    //  RENDERIZAÇÃO
+    //  RENDERIZAR RESUMO
     // ═══════════════════════════════════════════════════════════════════
-
     function renderSummary(data) {
         document.getElementById('saldoValor').textContent = formatBRL(data.saldo);
         document.getElementById('rendaValor').textContent = formatBRL(data.total_renda);
         document.getElementById('gastoValor').textContent = formatBRL(data.total_gasto);
+        document.getElementById('mediaDiariaValor').textContent = formatBRL(data.media_diaria_gasto || 0);
+        document.getElementById('numTransacoes').textContent = data.num_transacoes || 0;
+
+        const mg = data.maior_gasto;
+        if (mg) {
+            document.getElementById('maiorGastoValor').textContent = formatBRL(mg.valor);
+            document.getElementById('maiorGastoDesc').textContent = mg.descricao || '';
+        } else {
+            document.getElementById('maiorGastoValor').textContent = '—';
+            document.getElementById('maiorGastoDesc').textContent = '';
+        }
     }
 
+    // ═══════════════════════════════════════════════════════════════════
+    //  TABELA DE TRANSAÇÕES
+    // ═══════════════════════════════════════════════════════════════════
     function renderTransactions(list) {
         const tbody = document.getElementById('transactionsBody');
         const empty = document.getElementById('emptyState');
-
-        if (!list.length) {
+        if (!list || !list.length) {
             tbody.innerHTML = '';
             empty.classList.remove('d-none');
             return;
         }
-
         empty.classList.add('d-none');
         tbody.innerHTML = list.map(t => `
             <tr>
-                <td>${formatDate(t.data)}</td>
+                <td class="text-nowrap">${formatDate(t.data)}</td>
                 <td>${escapeHtml(t.descricao)}</td>
+                <td><span class="badge badge-cat">${escapeHtml(t.categoria || 'Outros')}</span></td>
                 <td><span class="badge badge-${t.tipo}">${t.tipo === 'renda' ? '↑ Renda' : '↓ Gasto'}</span></td>
-                <td class="text-end fw-semibold ${t.tipo === 'renda' ? 'text-renda' : 'text-gasto'}">${formatBRL(t.valor)}</td>
+                <td class="text-end fw-semibold text-nowrap ${t.tipo === 'renda' ? 'text-renda' : 'text-gasto'}">${formatBRL(t.valor)}</td>
             </tr>
         `).join('');
     }
 
-    function escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    }
+    // Search
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase().trim();
+        if (!q) { renderTransactions(allTransactions); return; }
+        const filtered = allTransactions.filter(t =>
+            (t.descricao || '').toLowerCase().includes(q) ||
+            (t.categoria || '').toLowerCase().includes(q) ||
+            (t.tipo || '').includes(q)
+        );
+        renderTransactions(filtered);
+    });
 
-    // ── Gráficos ────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════
+    //  GRÁFICOS
+    // ═══════════════════════════════════════════════════════════════════
 
-    function getChartColors() {
-        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-        return {
-            text: isDark ? '#f9fafb' : '#1f2937',
-            grid: isDark ? '#374151' : '#e5e7eb',
-        };
-    }
-
-    function renderChartPizza(summary) {
-        const ctx = document.getElementById('chartPizza').getContext('2d');
-        const colors = getChartColors();
-
-        if (chartPizzaInstance) chartPizzaInstance.destroy();
-
-        // Sem dados — não renderiza
-        if (!summary.total_renda && !summary.total_gasto) {
-            chartPizzaInstance = null;
-            return;
-        }
-
-        chartPizzaInstance = new Chart(ctx, {
+    function renderChartDonut(summary) {
+        const ctx = document.getElementById('chartDonut').getContext('2d');
+        const c = getChartColors();
+        if (chartDonut) chartDonut.destroy();
+        if (!summary.total_renda && !summary.total_gasto) { chartDonut = null; return; }
+        chartDonut = new Chart(ctx, {
             type: 'doughnut',
             data: {
                 labels: ['Rendas', 'Gastos'],
-                datasets: [{
-                    data: [summary.total_renda, summary.total_gasto],
-                    backgroundColor: ['#10b981', '#ef4444'],
-                    borderWidth: 0,
-                    hoverOffset: 8,
-                }],
+                datasets: [{ data: [summary.total_renda, summary.total_gasto], backgroundColor: ['#10b981', '#ef4444'], borderWidth: 0, hoverOffset: 8 }],
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                responsive: true, maintainAspectRatio: false, cutout: '65%',
                 plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { color: colors.text, padding: 16, font: { size: 13 } },
-                    },
+                    legend: { position: 'bottom', labels: { color: c.text, padding: 14, font: { size: 12 } } },
+                    tooltip: { callbacks: { label: ctx => `${ctx.label}: ${formatBRL(ctx.raw)}` } },
                 },
             },
         });
     }
 
-    function renderChartLinha(evolucao) {
-        const ctx = document.getElementById('chartLinha').getContext('2d');
-        const colors = getChartColors();
+    function renderChartBar(evolucao) {
+        const ctx = document.getElementById('chartBar').getContext('2d');
+        const c = getChartColors();
+        if (chartBar) chartBar.destroy();
+        if (!evolucao || !evolucao.length) { chartBar = null; return; }
+        chartBar = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: evolucao.map(e => formatMonth(e.mes)),
+                datasets: [
+                    { label: 'Rendas', data: evolucao.map(e => e.renda), backgroundColor: 'rgba(16,185,129,.7)', borderRadius: 6, borderSkipped: false },
+                    { label: 'Gastos', data: evolucao.map(e => e.gasto), backgroundColor: 'rgba(239,68,68,.7)', borderRadius: 6, borderSkipped: false },
+                ],
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: {
+                    x: { ticks: { color: c.text, font: { size: 11 } }, grid: { display: false } },
+                    y: { ticks: { color: c.text, callback: v => formatBRL(v) }, grid: { color: c.grid } },
+                },
+                plugins: {
+                    legend: { labels: { color: c.text, padding: 14, font: { size: 12 } } },
+                    tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${formatBRL(ctx.raw)}` } },
+                },
+            },
+        });
+    }
 
-        // Sem dados — não renderiza
-        if (!evolucao || evolucao.length === 0) {
-            if (chartLinhaInstance) chartLinhaInstance.destroy();
-            chartLinhaInstance = null;
+    function renderChartCategoria(categorias) {
+        const ctx = document.getElementById('chartCategoria').getContext('2d');
+        const c = getChartColors();
+        if (chartCategoria) chartCategoria.destroy();
+        if (!categorias || !categorias.length) {
+            chartCategoria = null;
+            ctx.canvas.parentElement.innerHTML = '<div class="no-data-msg"><i class="bi bi-tags"></i>Sem dados de categoria</div>';
             return;
         }
+        const labels = categorias.map(c => c.nome);
+        const values = categorias.map(c => c.valor);
+        chartCategoria = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels,
+                datasets: [{ data: values, backgroundColor: CAT_COLORS.slice(0, labels.length), borderWidth: 0, hoverOffset: 6 }],
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, cutout: '55%',
+                plugins: {
+                    legend: { position: 'right', labels: { color: c.text, padding: 8, font: { size: 11 }, boxWidth: 12 } },
+                    tooltip: { callbacks: { label: ctx => `${ctx.label}: ${formatBRL(ctx.raw)}` } },
+                },
+            },
+        });
+    }
 
-        const labels = evolucao.map(e => e.mes);
-        const rendas = evolucao.map(e => e.renda);
-        const gastos = evolucao.map(e => e.gasto);
-
-        if (chartLinhaInstance) chartLinhaInstance.destroy();
-        chartLinhaInstance = new Chart(ctx, {
+    function renderChartDaily(evolucaoDiaria) {
+        const ctx = document.getElementById('chartDaily').getContext('2d');
+        const c = getChartColors();
+        if (chartDaily) chartDaily.destroy();
+        if (!evolucaoDiaria || !evolucaoDiaria.length) {
+            chartDaily = null;
+            ctx.canvas.parentElement.innerHTML = '<div class="no-data-msg"><i class="bi bi-graph-up"></i>Sem dados diários</div>';
+            return;
+        }
+        // Limita a 60 pontos no máximo para legibilidade
+        const data = evolucaoDiaria.slice(-60);
+        const labels = data.map(e => {
+            const parts = e.dia.split('-');
+            return parts[2] + '/' + parts[1];
+        });
+        chartDaily = new Chart(ctx, {
             type: 'line',
             data: {
                 labels,
                 datasets: [
                     {
-                        label: 'Rendas',
-                        data: rendas,
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16,185,129,0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
+                        label: 'Gastos', data: data.map(e => e.gasto),
+                        borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,.08)',
+                        fill: true, tension: .3, pointRadius: data.length > 30 ? 0 : 3, pointHoverRadius: 5, borderWidth: 2,
                     },
                     {
-                        label: 'Gastos',
-                        data: gastos,
-                        borderColor: '#ef4444',
-                        backgroundColor: 'rgba(239,68,68,0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
+                        label: 'Rendas', data: data.map(e => e.renda),
+                        borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,.08)',
+                        fill: true, tension: .3, pointRadius: data.length > 30 ? 0 : 3, pointHoverRadius: 5, borderWidth: 2,
                     },
                 ],
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                responsive: true, maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
                 scales: {
-                    x: { ticks: { color: colors.text }, grid: { color: colors.grid } },
-                    y: {
-                        ticks: {
-                            color: colors.text,
-                            callback: v => formatBRL(v),
-                        },
-                        grid: { color: colors.grid },
-                    },
+                    x: { ticks: { color: c.text, font: { size: 10 }, maxRotation: 45, maxTicksLimit: 15 }, grid: { display: false } },
+                    y: { ticks: { color: c.text, callback: v => formatBRL(v) }, grid: { color: c.grid } },
                 },
                 plugins: {
-                    legend: {
-                        labels: { color: colors.text, padding: 16, font: { size: 13 } },
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: ctx => `${ctx.dataset.label}: ${formatBRL(ctx.parsed.y)}`,
-                        },
-                    },
+                    legend: { labels: { color: c.text, padding: 14, font: { size: 12 } } },
+                    tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${formatBRL(ctx.raw)}` } },
                 },
             },
         });
@@ -622,8 +659,6 @@
     // ═══════════════════════════════════════════════════════════════════
     //  NOVA TRANSAÇÃO
     // ═══════════════════════════════════════════════════════════════════
-
-    // Seta data padrão como hoje
     document.getElementById('txData').value = new Date().toISOString().slice(0, 10);
 
     document.getElementById('transactionForm').addEventListener('submit', async (e) => {
@@ -638,116 +673,67 @@
             valor: parseFloat(document.getElementById('txValor').value),
             descricao: document.getElementById('txDescricao').value.trim(),
             data: document.getElementById('txData').value,
+            categoria: document.getElementById('txCategoria').value,
         };
 
         if (!body.descricao || !body.valor || !body.data) {
             showToast('Preencha todos os campos.', 'warning');
-            btn.disabled = false;
-            spinner.classList.add('d-none');
+            btn.disabled = false; spinner.classList.add('d-none');
             return;
         }
 
         try {
-            await apiFetch('/transactions', {
-                method: 'POST',
-                body: JSON.stringify(body),
-            });
-
-            showToast('Transação salva com sucesso!', 'success');
+            await apiFetch('/transactions', { method: 'POST', body: JSON.stringify(body) });
+            showToast('Transação salva!', 'success');
             bootstrap.Modal.getInstance(document.getElementById('modalTransaction')).hide();
             document.getElementById('transactionForm').reset();
             document.getElementById('txData').value = new Date().toISOString().slice(0, 10);
-
-            // Recarrega dados
             loadDashboard();
         } catch (err) {
             showToast('Erro: ' + err.message, 'danger');
         } finally {
-            btn.disabled = false;
-            spinner.classList.add('d-none');
+            btn.disabled = false; spinner.classList.add('d-none');
         }
     });
 
     // ═══════════════════════════════════════════════════════════════════
     //  LAYOUT / PERSONALIZAÇÃO
     // ═══════════════════════════════════════════════════════════════════
-
     const WIDGET_LABELS = {
-        'saldo': '💰 Resumo (Saldo)',
-        'grafico_pizza': '🥧 Gráfico Pizza',
-        'grafico_linha': '📈 Gráfico Linha',
+        'resumo': '📊 Cards de Resumo',
+        'donut': '🥧 Renda vs Gasto',
+        'bar': '📊 Evolução Mensal',
+        'categorias': '🏷️ Categorias',
+        'daily': '📈 Tendência Diária',
         'transacoes': '📋 Transações',
     };
 
     function applyLayout(layout) {
         if (!layout) return;
-
-        // Tema
         const theme = layout.tema || 'light';
         setTheme(theme, false);
-
-        // Ordem dos widgets — reorganiza as linhas do grid
-        if (layout.widgets && layout.widgets.length) {
-            const container = document.getElementById('dashboardContainer');
-            const widgetOrder = layout.widgets.map(w => w.id);
-
-            // Mapeia widget id → elemento container (row)
-            const widgetToRow = {
-                'saldo': 'summaryRow',
-                'grafico_pizza': 'chartsRow',
-                'grafico_linha': 'chartsRow',
-                'transacoes': 'transactionsRow',
-            };
-
-            // Reordena as linhas
-            const rows = ['summaryRow', 'chartsRow', 'transactionsRow'];
-            const orderedRows = [];
-            widgetOrder.forEach(wid => {
-                const rowId = widgetToRow[wid];
-                if (rowId && !orderedRows.includes(rowId)) {
-                    orderedRows.push(rowId);
-                }
-            });
-            rows.forEach(r => { if (!orderedRows.includes(r)) orderedRows.push(r); });
-
-            orderedRows.forEach(rowId => {
-                const el = document.getElementById(rowId);
-                if (el) container.appendChild(el);
-            });
-        }
     }
 
     function setTheme(theme, save = true) {
         document.documentElement.setAttribute('data-bs-theme', theme);
         document.getElementById('btnThemeLight').classList.toggle('active', theme === 'light');
         document.getElementById('btnThemeDark').classList.toggle('active', theme === 'dark');
-
-        if (currentLayout) {
-            currentLayout.tema = theme;
+        if (currentLayout) currentLayout.tema = theme;
+        // Re-render charts with correct colors
+        if (cachedSummary) {
+            renderChartDonut(cachedSummary);
+            renderChartBar(cachedSummary.evolucao);
+            renderChartCategoria(cachedSummary.categorias_gasto);
+            renderChartDaily(cachedSummary.evolucao_diaria);
         }
-
-        // Re-renderiza gráficos com cores corretas
-        reRenderCharts();
-
         if (save) autoSaveLayout();
     }
-
-    function reRenderCharts() {
-        // Precisamos dos dados atuais, então buscamos novamente
-        apiFetch('/summary').then(summary => {
-            renderChartPizza(summary);
-            renderChartLinha(summary.evolucao);
-        }).catch(() => {});
-    }
-
-    // ── Painel lateral ──────────────────────────────────────────────
 
     function openCustomize() {
         document.getElementById('customizePanel').classList.add('open');
         document.getElementById('customizeOverlay').classList.add('open');
         renderWidgetSortList();
     }
-
     function closeCustomize() {
         document.getElementById('customizePanel').classList.remove('open');
         document.getElementById('customizeOverlay').classList.remove('open');
@@ -756,88 +742,57 @@
     function renderWidgetSortList() {
         const list = document.getElementById('widgetSortList');
         const widgets = (currentLayout && currentLayout.widgets) || [
-            { id: 'saldo' }, { id: 'grafico_pizza' }, { id: 'grafico_linha' }, { id: 'transacoes' },
+            {id:'resumo'},{id:'donut'},{id:'bar'},{id:'categorias'},{id:'daily'},{id:'transacoes'},
         ];
-
         list.innerHTML = widgets.map((w, i) => `
             <div class="widget-sort-item" draggable="true" data-idx="${i}" data-id="${w.id}">
-                <i class="bi bi-grip-vertical"></i>
+                <i class="bi bi-grip-vertical" style="color:var(--text-muted);font-size:1.2rem"></i>
                 <span>${WIDGET_LABELS[w.id] || w.id}</span>
             </div>
         `).join('');
 
-        // Drag & drop simples
         let dragIdx = null;
         list.querySelectorAll('.widget-sort-item').forEach(item => {
-            item.addEventListener('dragstart', (e) => {
-                dragIdx = parseInt(item.dataset.idx);
-                item.style.opacity = '0.5';
-            });
-            item.addEventListener('dragend', () => {
-                item.style.opacity = '1';
-            });
-            item.addEventListener('dragover', (e) => e.preventDefault());
-            item.addEventListener('drop', (e) => {
+            item.addEventListener('dragstart', () => { dragIdx = parseInt(item.dataset.idx); item.style.opacity = '.5'; });
+            item.addEventListener('dragend', () => { item.style.opacity = '1'; });
+            item.addEventListener('dragover', e => e.preventDefault());
+            item.addEventListener('drop', e => {
                 e.preventDefault();
                 const dropIdx = parseInt(item.dataset.idx);
                 if (dragIdx === null || dragIdx === dropIdx) return;
-
-                // Reordena
                 const arr = [...currentLayout.widgets];
                 const [moved] = arr.splice(dragIdx, 1);
                 arr.splice(dropIdx, 0, moved);
                 currentLayout.widgets = arr;
-
                 renderWidgetSortList();
-                applyLayout(currentLayout);
             });
         });
     }
 
-    // ── Salvar layout ───────────────────────────────────────────────
-
     let saveTimeout = null;
-
     function autoSaveLayout() {
         if (saveTimeout) clearTimeout(saveTimeout);
         saveTimeout = setTimeout(() => saveLayoutToServer(), 1000);
     }
-
-    async function saveLayoutNow() {
-        await saveLayoutToServer();
-        closeCustomize();
-    }
+    async function saveLayoutNow() { await saveLayoutToServer(); closeCustomize(); }
 
     async function saveLayoutToServer() {
         if (!currentLayout) return;
         const status = document.getElementById('layoutSaveStatus');
         status.innerHTML = '<span class="text-muted">Salvando…</span>';
-
         try {
-            await apiFetch('/layout', {
-                method: 'POST',
-                body: JSON.stringify({ layout: currentLayout }),
-            });
+            await apiFetch('/layout', { method: 'POST', body: JSON.stringify({ layout: currentLayout }) });
             status.innerHTML = '<span class="text-success"><i class="bi bi-check-circle"></i> Salvo!</span>';
             showToast('Layout salvo!', 'success');
-        } catch (err) {
-            status.innerHTML = '<span class="text-danger">Erro ao salvar</span>';
-            showToast('Erro ao salvar layout', 'danger');
-        }
-
+        } catch { status.innerHTML = '<span class="text-danger">Erro ao salvar</span>'; }
         setTimeout(() => { status.innerHTML = ''; }, 3000);
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    //  INICIALIZAÇÃO
+    //  INIT
     // ═══════════════════════════════════════════════════════════════════
-
     loadDashboard();
-
-    // Service Worker
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').catch(() => {});
-    }
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(() => {}); }
     </script>
 </body>
 </html>
