@@ -58,23 +58,16 @@ def get_current_user_id(authorization: str = Header(...)) -> str:
     """Extrai e valida o user_id a partir do token JWT do Supabase."""
     token = authorization.replace("Bearer ", "") if authorization.startswith("Bearer ") else authorization
     try:
-        # Tenta com audience primeiro, depois sem (compatibilidade Supabase)
-        payload = None
-        for options in [{"audience": "authenticated"}, {}]:
-            try:
-                payload = jwt.decode(
-                    token,
-                    SUPABASE_JWT_SECRET,
-                    algorithms=["HS256"],
-                    options={"verify_aud": bool(options)},
-                    **options,
-                )
-                break
-            except JWTError:
-                continue
+        # Detecta o algoritmo real do token
+        header = jwt.get_unverified_header(token)
+        alg = header.get("alg", "HS256")
 
-        if payload is None:
-            raise JWTError("Falha na decodificação")
+        payload = jwt.decode(
+            token,
+            SUPABASE_JWT_SECRET,
+            algorithms=[alg],
+            options={"verify_aud": False},
+        )
 
         user_id = payload.get("sub")
         if not user_id:
