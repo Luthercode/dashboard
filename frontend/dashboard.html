@@ -62,7 +62,7 @@
     .period-dd button:hover{background:var(--primary-glow);color:var(--primary)}
     .period-dd button.active{background:var(--primary);color:#fff}
     .search-wrap{position:relative}
-    .search-wrap input{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:.32rem .65rem .32rem 1.9rem;font-size:.78rem;color:var(--text);width:170px;outline:none;transition:border .2s}
+    .search-wrap input{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:.32rem 3.5rem .32rem 1.9rem;font-size:.78rem;color:var(--text);width:200px;outline:none;transition:border .2s}
     .search-wrap input:focus{border-color:var(--primary)}
     .search-wrap input::placeholder{color:var(--text3)}
     .search-wrap i{position:absolute;left:.6rem;top:50%;transform:translateY(-50%);color:var(--text3);font-size:.8rem}
@@ -246,7 +246,7 @@
                         <button data-p="all" class="active">Tudo</button>
                     </div>
                 </div>
-                <div class="search-wrap"><i class="bi bi-search"></i><input type="text" id="searchInput" placeholder="Buscar…"></div>
+                <div class="search-wrap"><i class="bi bi-search"></i><input type="text" id="searchInput" placeholder="Buscar transação…"><button class="search-clear" id="searchClear" style="display:none;position:absolute;right:.5rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:.75rem;padding:0"><i class="bi bi-x-circle-fill"></i></button><span class="search-badge" id="searchBadge" style="display:none;position:absolute;right:1.8rem;top:50%;transform:translateY(-50%);font-size:.6rem;background:var(--primary);color:#fff;padding:.08rem .35rem;border-radius:4px;font-weight:700"></span></div>
                 <div style="position:relative;display:inline-block" id="txExportDropdown">
                     <button class="icon-btn" id="btnExportTx" title="Exportar Transações"><i class="bi bi-download"></i></button>
                     <div id="txExportMenu" style="display:none;position:absolute;top:100%;right:0;margin-top:.3rem;background:var(--card);border:1px solid var(--border);border-radius:8px;min-width:170px;z-index:10;box-shadow:0 8px 24px rgba(0,0,0,.3)">
@@ -441,9 +441,16 @@
     /* ═══ SEARCH ═══ */
     $('searchInput').oninput=e=>{
         const q=e.target.value.toLowerCase().trim();
-        if(!q){renderTx(allTx);return}
-        renderTx(allTx.filter(t=>(t.descricao||'').toLowerCase().includes(q)||(t.categoria||'').toLowerCase().includes(q)||(t.tipo||'').includes(q)));
+        $('searchClear').style.display=q?'block':'none';
+        if(!q){$('searchBadge').style.display='none';renderTx(allTx);$('txCount').textContent=allTx.length+' registros';return}
+        const filtered=allTx.filter(t=>(t.descricao||'').toLowerCase().includes(q)||(t.categoria||'').toLowerCase().includes(q)||(t.tipo||'').includes(q));
+        renderTx(filtered);
+        $('searchBadge').style.display='inline';
+        $('searchBadge').textContent=filtered.length;
+        $('txCount').textContent=filtered.length+' de '+allTx.length;
+        $('txSection').scrollIntoView({behavior:'smooth',block:'nearest'});
     };
+    $('searchClear').onclick=()=>{$('searchInput').value='';$('searchInput').dispatchEvent(new Event('input'));$('searchInput').focus()};
 
     /* ═══ MODAL ═══ */
     function openModal(editTx){

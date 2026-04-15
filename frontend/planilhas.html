@@ -166,6 +166,17 @@
     .mini-chart-canvas{max-height:180px}
     /* ── Formula indicator ── */
     .grid-cell.formula{color:var(--cyan);font-style:italic}
+    /* ── Column resize handle ── */
+    .col-resize-handle{position:absolute;right:-3px;top:0;bottom:0;width:6px;cursor:col-resize;z-index:6;user-select:none}
+    .col-resize-handle:hover,.col-resize-handle.active{background:var(--primary);opacity:.4;border-radius:2px}
+    .grid-table th{position:relative}
+
+    /* ── Context menu ── */
+    .ctx-menu{position:fixed;background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-sm);box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:300;min-width:170px;padding:.3rem;display:none}
+    .ctx-menu.open{display:block}
+    .ctx-menu button{display:flex;align-items:center;gap:.5rem;width:100%;background:none;border:none;padding:.4rem .6rem;border-radius:6px;font-size:.78rem;color:var(--text2);cursor:pointer;text-align:left}
+    .ctx-menu button:hover{background:var(--primary-glow);color:var(--primary)}
+    .ctx-menu .ctx-divider{border-top:1px solid var(--border);margin:.2rem 0}
 
     @media(max-width:768px){
         .sidebar{transform:translateX(-100%)}
@@ -199,6 +210,14 @@
                 <h1 id="pageTitle">Planilhas</h1>
             </div>
             <div class="topbar-right" id="topbarRight">
+                <div class="search-wrap" style="position:relative"><i class="bi bi-search" style="position:absolute;left:.6rem;top:50%;transform:translateY(-50%);color:var(--text3);font-size:.8rem"></i><input type="text" id="sheetSearch" style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:.32rem .65rem .32rem 1.9rem;font-size:.78rem;color:var(--text);width:180px;outline:none" placeholder="Buscar planilha…"></div>
+                <div style="position:relative;display:inline-block" id="importDropdown">
+                    <button class="btn btn-secondary btn-sm" id="btnImport"><i class="bi bi-upload"></i> Importar <i class="bi bi-caret-down-fill" style="font-size:.55rem"></i></button>
+                    <div id="importMenu" style="display:none;position:absolute;top:100%;right:0;margin-top:.3rem;background:var(--card);border:1px solid var(--border);border-radius:8px;min-width:170px;z-index:10;box-shadow:0 8px 24px rgba(0,0,0,.3)">
+                        <button class="btn btn-secondary btn-sm" style="width:100%;justify-content:flex-start;border:0;border-radius:0;padding:.5rem .7rem" id="btnImportCSV"><i class="bi bi-filetype-csv"></i> Importar CSV</button>
+                        <button class="btn btn-secondary btn-sm" style="width:100%;justify-content:flex-start;border:0;border-radius:0;padding:.5rem .7rem" id="btnImportJSON"><i class="bi bi-filetype-json"></i> Importar JSON</button>
+                    </div>
+                </div>
                 <button class="btn btn-primary btn-sm" id="btnNewSheet"><i class="bi bi-plus-lg"></i> Nova Planilha</button>
             </div>
         </header>
@@ -225,6 +244,7 @@
                         <button class="btn btn-secondary btn-sm" id="btnBack"><i class="bi bi-arrow-left"></i> Voltar</button>
                         <input class="editor-title" id="editorTitle" placeholder="Nome da planilha" maxlength="100">
                         <div class="autosave-indicator" id="autosave"><i class="bi bi-check-circle"></i> Salvo</div>
+                        <span id="cellRef" style="font-size:.72rem;color:var(--text3);margin-left:.5rem;font-family:'Fira Code',monospace;background:var(--bg2);padding:.15rem .4rem;border-radius:4px;display:none"></span>
                     </div>
                     <input class="editor-desc" id="editorDesc" placeholder="Descrição (opcional)" maxlength="500">
                     <div class="editor-tools" style="margin:.6rem 0">
@@ -238,6 +258,7 @@
                         <span style="border-left:1px solid var(--border);margin:0 .2rem"></span>
                         <button class="btn btn-secondary btn-sm" id="btnDuplicate"><i class="bi bi-copy"></i> Duplicar</button>
                         <button class="btn btn-secondary btn-sm" id="btnChart"><i class="bi bi-bar-chart"></i> Gráfico</button>
+                        <button class="btn btn-secondary btn-sm" id="btnFindReplace" title="Localizar e Substituir (Ctrl+H)"><i class="bi bi-search"></i> Localizar</button>
                         <span style="border-left:1px solid var(--border);margin:0 .2rem"></span>
                         <div style="position:relative;display:inline-block" id="exportDropdown">
                             <button class="btn btn-primary btn-sm" id="btnSaveAs"><i class="bi bi-save"></i> Salvar Como <i class="bi bi-caret-down-fill" style="font-size:.6rem"></i></button>
@@ -311,6 +332,20 @@
         </div>
     </div>
 
+    <!-- CONTEXT MENU -->
+    <div class="ctx-menu" id="ctxMenu">
+        <button id="ctxInsertRowAbove"><i class="bi bi-arrow-bar-up"></i> Inserir linha acima</button>
+        <button id="ctxInsertRowBelow"><i class="bi bi-arrow-bar-down"></i> Inserir linha abaixo</button>
+        <div class="ctx-divider"></div>
+        <button id="ctxInsertColLeft"><i class="bi bi-arrow-bar-left"></i> Inserir coluna à esquerda</button>
+        <button id="ctxInsertColRight"><i class="bi bi-arrow-bar-right"></i> Inserir coluna à direita</button>
+        <div class="ctx-divider"></div>
+        <button id="ctxDeleteRow"><i class="bi bi-trash3"></i> Excluir linha</button>
+        <button id="ctxDeleteCol"><i class="bi bi-trash3"></i> Excluir coluna</button>
+        <div class="ctx-divider"></div>
+        <button id="ctxClearCell"><i class="bi bi-eraser"></i> Limpar célula</button>
+    </div>
+
     <div class="toast" id="toast"></div>
 
     <script src="config.js"></script>
@@ -338,9 +373,17 @@
     function updateOnline(){$('offlineBar').classList.toggle('show',!navigator.onLine)}
     window.addEventListener('online',updateOnline);window.addEventListener('offline',updateOnline);updateOnline();
 
+    /* ═══ SEARCH SHEETS/TEMPLATES ═══ */
+    $('sheetSearch').oninput = e => {
+        searchQuery = e.target.value.toLowerCase().trim();
+        renderTemplates();
+        renderSheets();
+    };
+
     /* ═══ STATE ═══ */
     let templates = [];
     let sheets = [];
+    let searchQuery = '';
     let currentSheet = null; // {id, nome, descricao, dados:{columns,rows}}
     let autoSaveTimer = null;
     let deleteSheetId = null;
@@ -374,16 +417,25 @@
 
     function renderTemplates(){
         const g = $('tplGrid');
-        if(!templates.length){g.innerHTML='<div style="color:var(--text3);font-size:.8rem">Sem templates disponíveis</div>';return}
-        g.innerHTML = templates.map((t,i)=>`
-            <div class="tpl-card" onclick="useTemplate(${i})" style="cursor:pointer">
+        let filtered = templates;
+        if (searchQuery) {
+            filtered = templates.filter(t =>
+                (t.nome||'').toLowerCase().includes(searchQuery) ||
+                (t.descricao||'').toLowerCase().includes(searchQuery)
+            );
+        }
+        if(!filtered.length){g.innerHTML='<div style="color:var(--text3);font-size:.8rem">'+(searchQuery?'Nenhum template encontrado':'Sem templates disponíveis')+'</div>';return}
+        g.innerHTML = filtered.map(t=>{
+            const origIdx = templates.indexOf(t);
+            return `
+            <div class="tpl-card" onclick="useTemplate(${origIdx})" style="cursor:pointer">
                 <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${t.cor}"></div>
                 <div class="tpl-icon" style="background:${t.cor}"><i class="bi ${t.icone}"></i></div>
                 <div class="tpl-name">${esc(t.nome)}</div>
                 <div class="tpl-desc">${esc(t.descricao)}</div>
                 <div class="tpl-badge">Template</div>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
     }
 
     async function useTemplate(idx){
@@ -424,9 +476,16 @@
     function renderSheets(){
         const g = $('sheetsGrid');
         const em = $('emptySheets');
-        if(!sheets.length){g.innerHTML='';g.appendChild(em);em.style.display='';return}
+        let filtered = sheets;
+        if (searchQuery) {
+            filtered = sheets.filter(s =>
+                (s.nome||'').toLowerCase().includes(searchQuery) ||
+                (s.descricao||'').toLowerCase().includes(searchQuery)
+            );
+        }
+        if(!filtered.length){g.innerHTML='';em.style.display='';if(searchQuery){em.innerHTML='<i class="bi bi-search"></i>Nenhuma planilha encontrada<p>Tente outro termo de busca</p>'}else{em.innerHTML='<i class="bi bi-table"></i>Nenhuma planilha ainda<p>Use um template ou crie do zero</p>'}g.appendChild(em);return}
         em.style.display='none';
-        g.innerHTML = sheets.map(s=>`
+        g.innerHTML = filtered.map(s=>`
             <div class="sheet-card" onclick="openSheetById('${s.id}')">
                 <div class="sheet-actions">
                     <button class="sheet-del" onclick="event.stopPropagation();duplicateSheet('${s.id}')" title="Duplicar"><i class="bi bi-copy"></i></button>
@@ -564,7 +623,7 @@
                 <option value="number" ${c.type === 'number' ? 'selected' : ''}>Número</option>
                 <option value="currency" ${c.type === 'currency' ? 'selected' : ''}>Moeda</option>
                 <option value="date" ${c.type === 'date' ? 'selected' : ''}>Data</option>
-            </select></th>`;
+            </select><div class="col-resize-handle" data-resize="${ci}"></div></th>`;
         });
         hhtml += '</tr>';
         // Filter row
@@ -611,6 +670,10 @@
                 const r = parseInt(cell.dataset.r), c = parseInt(cell.dataset.c);
                 const raw = currentSheet.dados.rows[r][c];
                 if (typeof raw === 'string' && raw.startsWith('=')) cell.value = raw;
+                // Show cell reference
+                const colLetter = String.fromCharCode(65 + (c % 26));
+                $('cellRef').textContent = colLetter + (r + 1);
+                $('cellRef').style.display = 'inline';
             };
             cell.oninput = () => {
                 const r = parseInt(cell.dataset.r), c = parseInt(cell.dataset.c);
@@ -697,6 +760,31 @@
                     const el = document.querySelector(`.filter-input[data-fc="${ci}"]`);
                     if (el) { el.focus(); el.selectionStart = el.selectionEnd = el.value.length; }
                 }, 10);
+            };
+        });
+
+        // Column resize drag
+        thead.querySelectorAll('.col-resize-handle').forEach(handle => {
+            handle.onmousedown = (e) => {
+                e.preventDefault(); e.stopPropagation();
+                const ci = parseInt(handle.dataset.resize);
+                const th = handle.parentElement;
+                const startX = e.clientX;
+                const startW = th.offsetWidth;
+                handle.classList.add('active');
+                const onMove = (ev) => {
+                    const diff = ev.clientX - startX;
+                    const newW = Math.max(60, startW + diff);
+                    th.style.width = newW + 'px';
+                    th.style.minWidth = newW + 'px';
+                };
+                const onUp = () => {
+                    handle.classList.remove('active');
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                };
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
             };
         });
 
@@ -827,6 +915,8 @@
         renderMiniChart();
     };
 
+    $('btnFindReplace').onclick = () => toggleFindReplace();
+
     function renderMiniChart() {
         if (miniChartInstance) { miniChartInstance.destroy(); miniChartInstance = null; }
         if (!currentSheet) return;
@@ -908,6 +998,10 @@
         if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveSheet(); }
         // Ctrl+P = Print
         if ((e.ctrlKey || e.metaKey) && e.key === 'p' && $('viewEditor').classList.contains('active')) { e.preventDefault(); printSheet(); }
+        // Ctrl+H = Find & Replace
+        if ((e.ctrlKey || e.metaKey) && e.key === 'h' && $('viewEditor').classList.contains('active')) { e.preventDefault(); toggleFindReplace(); }
+        // Ctrl+F = Find (open Find & Replace)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'f' && $('viewEditor').classList.contains('active')) { e.preventDefault(); if(!findReplaceOpen) toggleFindReplace(); else $('findInput').focus(); }
     });
 
     /* ═══ EXPORT DROPDOWN ═══ */
@@ -1002,6 +1096,12 @@
         if (!currentSheet) return;
         const cols = currentSheet.dados.columns;
         const rows = currentSheet.dados.rows;
+        // Capture chart as image if visible
+        let chartImg = '';
+        const chartCanvas = $('miniChart');
+        if (miniChartInstance && $('miniChartWrap').classList.contains('show')) {
+            try { chartImg = chartCanvas.toDataURL('image/png'); } catch(e) {}
+        }
         let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(currentSheet.nome)}</title>
         <style>
             body{font-family:Arial,sans-serif;padding:20px;color:#1a1a1a}
@@ -1011,6 +1111,9 @@
             td{padding:5px 8px;border:1px solid #ddd}
             tr:nth-child(even){background:#fafafa}
             .num{text-align:right;font-variant-numeric:tabular-nums}
+            .chart-section{margin-top:20px;text-align:center;page-break-inside:avoid}
+            .chart-section img{max-width:100%;height:auto;border:1px solid #ddd;border-radius:6px}
+            .chart-section h3{font-size:14px;color:#444;margin-bottom:8px}
             .footer{margin-top:12px;font-size:10px;color:#999;text-align:right}
         </style></head><body>
         <h1>${esc(currentSheet.nome)}</h1>
@@ -1026,7 +1129,11 @@
             });
             html += '</tr>';
         });
-        html += `</tbody></table><div class="footer">Exportado em ${new Date().toLocaleString('pt-BR')}</div></body></html>`;
+        html += '</tbody></table>';
+        if (chartImg) {
+            html += `<div class="chart-section"><h3>Gráfico da Planilha</h3><img src="${chartImg}" alt="Gráfico"></div>`;
+        }
+        html += `<div class="footer">Exportado em ${new Date().toLocaleString('pt-BR')}</div></body></html>`;
         const win = window.open('', '_blank');
         win.document.write(html);
         win.document.close();
@@ -1111,6 +1218,307 @@
     };
 
     /* ═══ INIT ═══ */
+    // Import dropdown toggle
+    $('btnImport').onclick = () => {
+        const menu = $('importMenu');
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    };
+    document.addEventListener('click', e => {
+        if (!$('importDropdown').contains(e.target)) $('importMenu').style.display = 'none';
+    });
+
+    /* ═══ IMPORT CSV ═══ */
+    $('btnImportCSV').onclick = () => {
+        $('importMenu').style.display = 'none';
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.csv,text/csv';
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const text = await file.text();
+                const lines = text.split(/\r?\n/).filter(l => l.trim());
+                if (lines.length < 1) { toast('CSV vazio', 'warning'); return; }
+                // Parse CSV (handle quoted fields)
+                function parseCSVLine(line) {
+                    const result = []; let current = ''; let inQuotes = false;
+                    for (let i = 0; i < line.length; i++) {
+                        const ch = line[i];
+                        if (inQuotes) {
+                            if (ch === '"' && line[i+1] === '"') { current += '"'; i++; }
+                            else if (ch === '"') inQuotes = false;
+                            else current += ch;
+                        } else {
+                            if (ch === '"') inQuotes = true;
+                            else if (ch === ',' || ch === ';') { result.push(current.trim()); current = ''; }
+                            else current += ch;
+                        }
+                    }
+                    result.push(current.trim());
+                    return result;
+                }
+                const headerRow = parseCSVLine(lines[0]);
+                const columns = headerRow.map((h, i) => ({
+                    id: 'c' + (i + 1),
+                    name: h || 'Coluna ' + (i + 1),
+                    type: 'text'
+                }));
+                const rows = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const vals = parseCSVLine(lines[i]);
+                    const row = columns.map((_, ci) => vals[ci] || '');
+                    // Auto-detect: if all numeric in a col, mark col type
+                    rows.push(row);
+                }
+                // Auto-detect column types
+                columns.forEach((col, ci) => {
+                    const nums = rows.filter(r => r[ci] && !isNaN(parseFloat(String(r[ci]).replace(',', '.')))).length;
+                    if (nums > rows.length * 0.7) col.type = 'number';
+                });
+                const nome = file.name.replace(/\.csv$/i, '');
+                const body = { nome, descricao: 'Importado de CSV', dados: { columns, rows } };
+                if (navigator.onLine) {
+                    const saved = await api('/spreadsheets', { method: 'POST', body: JSON.stringify(body) });
+                    await OfflineDB.put('spreadsheets', saved);
+                    openEditor(saved);
+                } else {
+                    const local = { id: 'local_' + Date.now(), ...body, _offline: true, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+                    await OfflineDB.put('spreadsheets', local);
+                    await SyncEngine.queueAction({ type: 'create', store: 'spreadsheets', endpoint: '/spreadsheets', data: body, localId: local.id });
+                    openEditor(local);
+                }
+                loadSheets();
+                toast('CSV importado! ' + rows.length + ' linhas');
+            } catch (err) { toast('Erro ao importar CSV: ' + err.message, 'danger'); }
+        };
+        input.click();
+    };
+
+    /* ═══ IMPORT JSON ═══ */
+    $('btnImportJSON').onclick = () => {
+        $('importMenu').style.display = 'none';
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json,application/json';
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const text = await file.text();
+                const data = JSON.parse(text);
+                if (!data.dados || !data.dados.columns || !data.dados.rows) {
+                    toast('JSON inválido: formato não reconhecido', 'danger'); return;
+                }
+                const body = {
+                    nome: data.nome || file.name.replace(/\.json$/i, ''),
+                    descricao: data.descricao || 'Importado de JSON',
+                    dados: data.dados
+                };
+                if (navigator.onLine) {
+                    const saved = await api('/spreadsheets', { method: 'POST', body: JSON.stringify(body) });
+                    await OfflineDB.put('spreadsheets', saved);
+                    openEditor(saved);
+                } else {
+                    const local = { id: 'local_' + Date.now(), ...body, _offline: true, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+                    await OfflineDB.put('spreadsheets', local);
+                    await SyncEngine.queueAction({ type: 'create', store: 'spreadsheets', endpoint: '/spreadsheets', data: body, localId: local.id });
+                    openEditor(local);
+                }
+                loadSheets();
+                toast('JSON importado com sucesso!');
+            } catch (err) { toast('Erro ao importar JSON: ' + err.message, 'danger'); }
+        };
+        input.click();
+    };
+
+    /* ═══ FIND & REPLACE (Ctrl+H) ═══ */
+    let findReplaceOpen = false;
+    function toggleFindReplace() {
+        if (!currentSheet || !$('viewEditor').classList.contains('active')) return;
+        findReplaceOpen = !findReplaceOpen;
+        let panel = $('findReplacePanel');
+        if (!panel) {
+            // Create panel dynamically
+            panel = document.createElement('div');
+            panel.id = 'findReplacePanel';
+            panel.style.cssText = 'display:none;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.75rem;margin-bottom:.5rem;position:relative';
+            panel.innerHTML = `
+                <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+                    <div style="flex:1;min-width:150px;position:relative">
+                        <input id="findInput" class="form-input" placeholder="Buscar nas células…" style="padding-right:2.5rem;font-size:.82rem">
+                        <span id="findCount" style="position:absolute;right:.5rem;top:50%;transform:translateY(-50%);font-size:.65rem;color:var(--text3)"></span>
+                    </div>
+                    <div style="flex:1;min-width:150px">
+                        <input id="replaceInput" class="form-input" placeholder="Substituir por…" style="font-size:.82rem">
+                    </div>
+                    <button class="btn btn-secondary btn-sm" id="btnFindNext"><i class="bi bi-arrow-down-short"></i> Próximo</button>
+                    <button class="btn btn-secondary btn-sm" id="btnReplaceOne"><i class="bi bi-arrow-repeat"></i> Substituir</button>
+                    <button class="btn btn-primary btn-sm" id="btnReplaceAll"><i class="bi bi-arrow-repeat"></i> Substituir Todos</button>
+                    <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:1rem;padding:.2rem" id="btnCloseFR"><i class="bi bi-x-lg"></i></button>
+                </div>
+            `;
+            const editorCard = $('viewEditor').querySelector('.card');
+            editorCard.insertBefore(panel, $('gridWrap'));
+            // Events
+            $('btnCloseFR').onclick = () => { panel.style.display = 'none'; findReplaceOpen = false; clearFindHighlights(); };
+            $('findInput').oninput = () => findInCells();
+            $('btnFindNext').onclick = () => findNextCell();
+            $('btnReplaceOne').onclick = () => replaceCurrentCell();
+            $('btnReplaceAll').onclick = () => replaceAllCells();
+        }
+        panel.style.display = findReplaceOpen ? 'block' : 'none';
+        if (findReplaceOpen) { $('findInput').focus(); $('findInput').select(); }
+        else clearFindHighlights();
+    }
+
+    let findMatches = [];
+    let findMatchIdx = -1;
+
+    function findInCells() {
+        clearFindHighlights();
+        const q = ($('findInput').value || '').toLowerCase();
+        findMatches = []; findMatchIdx = -1;
+        if (!q || !currentSheet) { $('findCount').textContent = ''; return; }
+        const rows = currentSheet.dados.rows;
+        rows.forEach((r, ri) => {
+            r.forEach((v, ci) => {
+                if (String(v || '').toLowerCase().includes(q)) {
+                    findMatches.push({ r: ri, c: ci });
+                    const cell = document.querySelector(`#gridTable input[data-r="${ri}"][data-c="${ci}"]`);
+                    if (cell) cell.style.boxShadow = 'inset 0 0 0 2px var(--amber)';
+                }
+            });
+        });
+        $('findCount').textContent = findMatches.length ? findMatches.length + ' encontrado' + (findMatches.length > 1 ? 's' : '') : 'Nenhum';
+        if (findMatches.length) findNextCell();
+    }
+
+    function findNextCell() {
+        if (!findMatches.length) return;
+        // Remove previous highlight
+        if (findMatchIdx >= 0) {
+            const prev = findMatches[findMatchIdx];
+            const prevCell = document.querySelector(`#gridTable input[data-r="${prev.r}"][data-c="${prev.c}"]`);
+            if (prevCell) prevCell.style.boxShadow = 'inset 0 0 0 2px var(--amber)';
+        }
+        findMatchIdx = (findMatchIdx + 1) % findMatches.length;
+        const m = findMatches[findMatchIdx];
+        const cell = document.querySelector(`#gridTable input[data-r="${m.r}"][data-c="${m.c}"]`);
+        if (cell) {
+            cell.style.boxShadow = 'inset 0 0 0 2px var(--primary)';
+            cell.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            cell.focus();
+        }
+        $('findCount').textContent = (findMatchIdx + 1) + '/' + findMatches.length;
+    }
+
+    function replaceCurrentCell() {
+        if (findMatchIdx < 0 || !findMatches.length) return;
+        const q = $('findInput').value;
+        const rep = $('replaceInput').value;
+        const m = findMatches[findMatchIdx];
+        pushUndo();
+        const val = String(currentSheet.dados.rows[m.r][m.c] || '');
+        currentSheet.dados.rows[m.r][m.c] = val.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), rep);
+        renderGrid();
+        scheduleAutoSave();
+        findInCells();
+        toast('Substituído!');
+    }
+
+    function replaceAllCells() {
+        if (!findMatches.length) return;
+        const q = $('findInput').value;
+        const rep = $('replaceInput').value;
+        if (!q) return;
+        pushUndo();
+        const regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+        let count = 0;
+        currentSheet.dados.rows.forEach(r => {
+            r.forEach((v, ci) => {
+                const str = String(v || '');
+                if (str.toLowerCase().includes(q.toLowerCase())) {
+                    r[ci] = str.replace(regex, rep);
+                    count++;
+                }
+            });
+        });
+        renderGrid();
+        scheduleAutoSave();
+        findInCells();
+        toast(count + ' célula' + (count > 1 ? 's' : '') + ' substituída' + (count > 1 ? 's' : ''));
+    }
+
+    function clearFindHighlights() {
+        document.querySelectorAll('#gridTable .grid-cell').forEach(c => { c.style.boxShadow = ''; });
+        findMatches = []; findMatchIdx = -1;
+    }
+
+    /* ═══ CONTEXT MENU ═══ */
+    let ctxR = -1, ctxC = -1;
+    document.addEventListener('contextmenu', e => {
+        const cell = e.target.closest('.grid-cell');
+        if (!cell || !currentSheet) return;
+        e.preventDefault();
+        ctxR = parseInt(cell.dataset.r);
+        ctxC = parseInt(cell.dataset.c);
+        const menu = $('ctxMenu');
+        menu.classList.add('open');
+        menu.style.left = Math.min(e.clientX, window.innerWidth - 200) + 'px';
+        menu.style.top = Math.min(e.clientY, window.innerHeight - 280) + 'px';
+    });
+    document.addEventListener('click', () => $('ctxMenu').classList.remove('open'));
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') $('ctxMenu').classList.remove('open'); });
+
+    $('ctxInsertRowAbove').onclick = () => {
+        if (ctxR < 0 || !currentSheet) return;
+        pushUndo();
+        const ncols = currentSheet.dados.columns.length;
+        currentSheet.dados.rows.splice(ctxR, 0, new Array(ncols).fill(''));
+        renderGrid(); scheduleAutoSave();
+    };
+    $('ctxInsertRowBelow').onclick = () => {
+        if (ctxR < 0 || !currentSheet) return;
+        pushUndo();
+        const ncols = currentSheet.dados.columns.length;
+        currentSheet.dados.rows.splice(ctxR + 1, 0, new Array(ncols).fill(''));
+        renderGrid(); scheduleAutoSave();
+    };
+    $('ctxInsertColLeft').onclick = () => {
+        if (ctxC < 0 || !currentSheet) return;
+        pushUndo();
+        currentSheet.dados.columns.splice(ctxC, 0, { id: 'c' + Date.now(), name: 'Nova Coluna', type: 'text' });
+        currentSheet.dados.rows.forEach(r => r.splice(ctxC, 0, ''));
+        renderGrid(); scheduleAutoSave();
+    };
+    $('ctxInsertColRight').onclick = () => {
+        if (ctxC < 0 || !currentSheet) return;
+        pushUndo();
+        currentSheet.dados.columns.splice(ctxC + 1, 0, { id: 'c' + Date.now(), name: 'Nova Coluna', type: 'text' });
+        currentSheet.dados.rows.forEach(r => r.splice(ctxC + 1, 0, ''));
+        renderGrid(); scheduleAutoSave();
+    };
+    $('ctxDeleteRow').onclick = () => {
+        if (ctxR < 0 || !currentSheet || currentSheet.dados.rows.length <= 1) return;
+        pushUndo();
+        currentSheet.dados.rows.splice(ctxR, 1);
+        renderGrid(); scheduleAutoSave();
+    };
+    $('ctxDeleteCol').onclick = () => {
+        if (ctxC < 0 || !currentSheet || currentSheet.dados.columns.length <= 1) return;
+        pushUndo();
+        currentSheet.dados.columns.splice(ctxC, 1);
+        currentSheet.dados.rows.forEach(r => r.splice(ctxC, 1));
+        renderGrid(); scheduleAutoSave();
+    };
+    $('ctxClearCell').onclick = () => {
+        if (ctxR < 0 || ctxC < 0 || !currentSheet) return;
+        pushUndo();
+        currentSheet.dados.rows[ctxR][ctxC] = '';
+        renderGrid(); scheduleAutoSave();
+    };
+
     OfflineDB.open().then(()=>{
         SyncEngine.init();
         loadTemplates();
