@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Planilhas — Dashboard Financeiro</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0a0e1a">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -146,6 +147,26 @@
     .bottom-nav a i{font-size:1.1rem}
     .bottom-nav a.active{color:var(--primary)}
 
+    /* ── Sort indicators ── */
+    .sort-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:.7rem;padding:0 .15rem;vertical-align:middle;transition:color .15s}
+    .sort-btn:hover,.sort-btn.asc,.sort-btn.desc{color:var(--primary)}
+    .sort-btn.desc{transform:rotate(180deg);display:inline-block}
+    /* ── Filter row ── */
+    .filter-row th{background:var(--bg2);padding:.2rem .3rem;border-bottom:1px solid var(--border)}
+    .filter-input{width:100%;background:var(--card);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:.7rem;padding:.2rem .4rem;outline:none}
+    .filter-input:focus{border-color:var(--primary)}
+    /* ── Conditional colors ── */
+    .grid-cell.positive{color:var(--green)!important}
+    .grid-cell.negative{color:var(--red)!important}
+    /* ── Mini chart ── */
+    .mini-chart-wrap{margin-top:.75rem;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.75rem;display:none}
+    .mini-chart-wrap.show{display:block}
+    .mini-chart-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem}
+    .mini-chart-head span{font-size:.78rem;font-weight:600;color:var(--text2)}
+    .mini-chart-canvas{max-height:180px}
+    /* ── Formula indicator ── */
+    .grid-cell.formula{color:var(--cyan);font-style:italic}
+
     @media(max-width:768px){
         .sidebar{transform:translateX(-100%)}
         .sidebar.open{transform:translateX(0);box-shadow:4px 0 30px rgba(0,0,0,.3)}
@@ -211,6 +232,8 @@
                         <button class="btn btn-secondary btn-sm" id="btnAddCol"><i class="bi bi-plus"></i> Coluna</button>
                         <button class="btn btn-secondary btn-sm" id="btnDelRow"><i class="bi bi-dash"></i> Linha</button>
                         <button class="btn btn-secondary btn-sm" id="btnDelCol"><i class="bi bi-dash"></i> Coluna</button>
+                        <button class="btn btn-secondary btn-sm" id="btnDuplicate"><i class="bi bi-copy"></i> Duplicar</button>
+                        <button class="btn btn-secondary btn-sm" id="btnChart"><i class="bi bi-bar-chart"></i> Gráfico</button>
                         <button class="btn btn-secondary btn-sm" id="btnExport"><i class="bi bi-download"></i> CSV</button>
                     </div>
                     <div class="grid-wrap" id="gridWrap">
@@ -219,6 +242,13 @@
                     <div class="grid-footer">
                         <span id="gridInfo">0 linhas × 0 colunas</span>
                         <span class="grid-sum" id="gridSum"></span>
+                    </div>
+                    <div class="mini-chart-wrap" id="miniChartWrap">
+                        <div class="mini-chart-head">
+                            <span><i class="bi bi-bar-chart"></i> Gráfico da Planilha</span>
+                            <button class="btn-icon" onclick="document.getElementById('miniChartWrap').classList.remove('show')" style="width:24px;height:24px;font-size:.7rem"><i class="bi bi-x-lg"></i></button>
+                        </div>
+                        <canvas id="miniChart" class="mini-chart-canvas" height="160"></canvas>
                     </div>
                 </div>
             </div>
@@ -301,6 +331,10 @@
     let currentSheet = null; // {id, nome, descricao, dados:{columns,rows}}
     let autoSaveTimer = null;
     let deleteSheetId = null;
+    let sortCol = -1;
+    let sortDir = 'none'; // none, asc, desc
+    let filters = {}; // {colIndex: 'text'}
+    let miniChartInstance = null;
 
     /* ═══ VIEWS ═══ */
     function showView(v){
@@ -382,6 +416,7 @@
         g.innerHTML = sheets.map(s=>`
             <div class="sheet-card" onclick="openSheetById('${s.id}')">
                 <div class="sheet-actions">
+                    <button class="sheet-del" onclick="event.stopPropagation();duplicateSheet('${s.id}')" title="Duplicar"><i class="bi bi-copy"></i></button>
                     <button class="sheet-del" onclick="event.stopPropagation();askDeleteSheet('${s.id}')" title="Excluir"><i class="bi bi-trash3"></i></button>
                 </div>
                 <div class="sheet-name">${esc(s.nome)}${s._offline?' <i class="bi bi-cloud-arrow-up" style="color:var(--amber);font-size:.7rem"></i>':''}</div>
@@ -417,6 +452,9 @@
         if(!currentSheet.dados) currentSheet.dados = {columns:[], rows:[]};
         if(!currentSheet.dados.columns) currentSheet.dados.columns = [];
         if(!currentSheet.dados.rows) currentSheet.dados.rows = [];
+        sortCol = -1; sortDir = 'none'; filters = {};
+        if(miniChartInstance){miniChartInstance.destroy();miniChartInstance=null}
+        $('miniChartWrap').classList.remove('show');
         $('editorTitle').value = currentSheet.nome || '';
         $('editorDesc').value = currentSheet.descricao || '';
         renderGrid();
@@ -424,52 +462,143 @@
         setAutoSaveStatus('saved');
     }
 
+    /* ═══ FORMULA ENGINE ═══ */
+    function evalFormula(formula, colIndex, rows, cols) {
+        const f = formula.toUpperCase().trim();
+        const match = f.match(/^=(\w+)\(([^)]*)\)$/);
+        if (!match) return formula;
+        const fn = match[1];
+        const arg = match[2].trim();
+        // Find column by id (e.g. "c2") or by index
+        let targetCol = -1;
+        if (/^C\d+$/.test(arg)) {
+            const cid = arg.toLowerCase();
+            targetCol = cols.findIndex(c => c.id === cid);
+        } else {
+            const n = parseInt(arg);
+            if (!isNaN(n) && n >= 1 && n <= cols.length) targetCol = n - 1;
+        }
+        if (targetCol < 0) return '#REF!';
+        const nums = rows.map(r => parseFloat(r[targetCol])).filter(v => !isNaN(v));
+        if (fn === 'SUM') return nums.reduce((a, b) => a + b, 0);
+        if (fn === 'AVG' || fn === 'AVERAGE' || fn === 'MEDIA') return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0;
+        if (fn === 'COUNT' || fn === 'CONT') return nums.length;
+        if (fn === 'MAX') return nums.length ? Math.max(...nums) : 0;
+        if (fn === 'MIN') return nums.length ? Math.min(...nums) : 0;
+        return '#FUNC!';
+    }
+
+    function getCellDisplay(val, colIndex, rows, cols, colType) {
+        if (typeof val === 'string' && val.startsWith('=')) {
+            const result = evalFormula(val, colIndex, rows, cols);
+            if (typeof result === 'number') {
+                if (colType === 'currency') return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(result);
+                return result.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+            }
+            return result;
+        }
+        return null; // not a formula
+    }
+
     /* ═══ GRID RENDER ═══ */
     function renderGrid(){
         const cols = currentSheet.dados.columns;
-        const rows = currentSheet.dados.rows;
+        let rows = currentSheet.dados.rows;
         const thead = document.querySelector('#gridTable thead');
         const tbody = document.querySelector('#gridTable tbody');
 
-        // Header
+        // Build row indices (for sorting/filtering while preserving original indices)
+        let indices = rows.map((_, i) => i);
+
+        // Apply filters
+        Object.keys(filters).forEach(ci => {
+            const q = (filters[ci] || '').toLowerCase();
+            if (!q) return;
+            const c = parseInt(ci);
+            indices = indices.filter(i => {
+                const val = String(rows[i][c] || '').toLowerCase();
+                return val.includes(q);
+            });
+        });
+
+        // Apply sorting
+        if (sortCol >= 0 && sortDir !== 'none') {
+            const type = cols[sortCol]?.type;
+            indices.sort((a, b) => {
+                let va = rows[a][sortCol], vb = rows[b][sortCol];
+                if (type === 'number' || type === 'currency') {
+                    va = parseFloat(va) || 0; vb = parseFloat(vb) || 0;
+                } else {
+                    va = String(va || '').toLowerCase(); vb = String(vb || '').toLowerCase();
+                }
+                if (va < vb) return sortDir === 'asc' ? -1 : 1;
+                if (va > vb) return sortDir === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        // Header with sort buttons
         let hhtml = '<tr><th class="row-num">#</th>';
-        cols.forEach((c,ci)=>{
-            hhtml += `<th><input class="col-name" value="${esc(c.name)}" data-ci="${ci}" maxlength="30" 
-                style="min-width:80px"><br><select class="col-name" data-type="${ci}" style="font-size:.6rem;background:none;border:none;color:var(--text3);outline:none;cursor:pointer;margin-top:2px">
-                <option value="text" ${c.type==='text'?'selected':''}>Texto</option>
-                <option value="number" ${c.type==='number'?'selected':''}>Número</option>
-                <option value="currency" ${c.type==='currency'?'selected':''}>Moeda</option>
-                <option value="date" ${c.type==='date'?'selected':''}>Data</option>
+        cols.forEach((c, ci) => {
+            const sortCls = sortCol === ci ? (sortDir === 'asc' ? 'asc' : sortDir === 'desc' ? 'desc' : '') : '';
+            hhtml += `<th><div style="display:flex;align-items:center;gap:.3rem">
+                <input class="col-name" value="${esc(c.name)}" data-ci="${ci}" maxlength="30" style="min-width:70px;flex:1">
+                <button class="sort-btn ${sortCls}" data-sort="${ci}" title="Ordenar"><i class="bi bi-arrow-down-short"></i></button>
+            </div>
+            <select class="col-name" data-type="${ci}" style="font-size:.6rem;background:none;border:none;color:var(--text3);outline:none;cursor:pointer;margin-top:2px">
+                <option value="text" ${c.type === 'text' ? 'selected' : ''}>Texto</option>
+                <option value="number" ${c.type === 'number' ? 'selected' : ''}>Número</option>
+                <option value="currency" ${c.type === 'currency' ? 'selected' : ''}>Moeda</option>
+                <option value="date" ${c.type === 'date' ? 'selected' : ''}>Data</option>
             </select></th>`;
+        });
+        hhtml += '</tr>';
+        // Filter row
+        hhtml += '<tr class="filter-row"><th class="row-num"><i class="bi bi-funnel" style="font-size:.65rem"></i></th>';
+        cols.forEach((c, ci) => {
+            hhtml += `<th><input class="filter-input" data-fc="${ci}" placeholder="Filtrar…" value="${esc(filters[ci] || '')}"></th>`;
         });
         hhtml += '</tr>';
         thead.innerHTML = hhtml;
 
-        // Body
+        // Body (use filtered/sorted indices)
         let bhtml = '';
-        rows.forEach((row,ri)=>{
-            bhtml += `<tr><td class="row-num">${ri+1}</td>`;
-            cols.forEach((c,ci)=>{
-                const val = row[ci] !== undefined && row[ci] !== null ? row[ci] : '';
-                const cls = (c.type==='currency'||c.type==='number') ? ' '+c.type : '';
-                bhtml += `<td><input class="grid-cell${cls}" value="${esc(String(val))}" data-r="${ri}" data-c="${ci}"></td>`;
+        indices.forEach((ri, displayIdx) => {
+            bhtml += `<tr><td class="row-num">${displayIdx + 1}</td>`;
+            cols.forEach((c, ci) => {
+                const rawVal = rows[ri][ci] !== undefined && rows[ri][ci] !== null ? rows[ri][ci] : '';
+                const isFormula = typeof rawVal === 'string' && rawVal.startsWith('=');
+                const display = isFormula ? getCellDisplay(rawVal, ci, rows, cols, c.type) : null;
+                const cls = (c.type === 'currency' || c.type === 'number') ? ' ' + c.type : '';
+                // Conditional coloring for currency/number
+                let colorCls = '';
+                const numVal = parseFloat(isFormula && typeof display === 'string' ? display.replace(/[^0-9,.-]/g, '').replace(',', '.') : rawVal);
+                if ((c.type === 'currency' || c.type === 'number') && !isNaN(numVal)) {
+                    if (numVal > 0) colorCls = ' positive';
+                    else if (numVal < 0) colorCls = ' negative';
+                }
+                const formulaCls = isFormula ? ' formula' : '';
+                const showVal = isFormula ? (display !== null ? display : rawVal) : esc(String(rawVal));
+                bhtml += `<td><input class="grid-cell${cls}${colorCls}${formulaCls}" value="${esc(String(rawVal))}" ${isFormula ? 'title="' + esc(showVal) + '"' : ''} data-r="${ri}" data-c="${ci}"></td>`;
             });
             bhtml += '</tr>';
         });
         tbody.innerHTML = bhtml;
 
         // Info
-        $('gridInfo').textContent = `${rows.length} linhas × ${cols.length} colunas`;
+        $('gridInfo').textContent = `${indices.length}/${rows.length} linhas × ${cols.length} colunas`;
         updateSums();
 
-        // Events
-        tbody.querySelectorAll('.grid-cell').forEach(cell=>{
+        // Events — cells
+        tbody.querySelectorAll('.grid-cell').forEach(cell => {
             cell.oninput = () => {
                 const r = parseInt(cell.dataset.r), c = parseInt(cell.dataset.c);
                 let v = cell.value;
                 const type = cols[c]?.type;
-                if(type==='number'||type==='currency'){
-                    const n = parseFloat(v.replace(',','.'));
+                if (v.startsWith('=')) {
+                    currentSheet.dados.rows[r][c] = v;
+                } else if (type === 'number' || type === 'currency') {
+                    const n = parseFloat(v.replace(',', '.'));
                     currentSheet.dados.rows[r][c] = isNaN(n) ? v : n;
                 } else {
                     currentSheet.dados.rows[r][c] = v;
@@ -478,42 +607,89 @@
                 updateSums();
             };
             cell.onkeydown = e => {
-                if(e.key==='Tab'){
+                if (e.key === 'Tab') {
                     e.preventDefault();
                     const r = parseInt(cell.dataset.r), c = parseInt(cell.dataset.c);
-                    let nr=r, nc=c+1;
-                    if(nc>=cols.length){nc=0;nr++}
-                    if(nr>=rows.length) return;
+                    let nc = c + 1, nr = r;
+                    if (nc >= cols.length) { nc = 0; nr = indices[indices.indexOf(r) + 1]; }
+                    if (nr === undefined) return;
                     const next = tbody.querySelector(`input[data-r="${nr}"][data-c="${nc}"]`);
-                    if(next)next.focus();
+                    if (next) next.focus();
                 }
-                if(e.key==='Enter'){
+                if (e.key === 'Enter') {
                     e.preventDefault();
                     const r = parseInt(cell.dataset.r), c = parseInt(cell.dataset.c);
-                    const nr = r+1;
-                    if(nr>=rows.length) return;
-                    const next = tbody.querySelector(`input[data-r="${nr}"][data-c="${c}"]`);
-                    if(next)next.focus();
+                    const ni = indices.indexOf(r) + 1;
+                    if (ni >= indices.length) return;
+                    const next = tbody.querySelector(`input[data-r="${indices[ni]}"][data-c="${c}"]`);
+                    if (next) next.focus();
+                }
+            };
+            // Show formula result on blur, raw formula on focus
+            cell.onfocus = () => {
+                const r = parseInt(cell.dataset.r), c = parseInt(cell.dataset.c);
+                const raw = currentSheet.dados.rows[r][c];
+                if (typeof raw === 'string' && raw.startsWith('=')) cell.value = raw;
+            };
+            cell.onblur = () => {
+                const r = parseInt(cell.dataset.r), c = parseInt(cell.dataset.c);
+                const raw = currentSheet.dados.rows[r][c];
+                if (typeof raw === 'string' && raw.startsWith('=')) {
+                    const result = getCellDisplay(raw, c, currentSheet.dados.rows, cols, cols[c].type);
+                    if (result !== null) cell.value = result;
                 }
             };
         });
 
         // Column name events
-        thead.querySelectorAll('input.col-name').forEach(inp=>{
-            inp.oninput = ()=>{
+        thead.querySelectorAll('input.col-name').forEach(inp => {
+            inp.oninput = () => {
                 const ci = parseInt(inp.dataset.ci);
                 currentSheet.dados.columns[ci].name = inp.value;
                 scheduleAutoSave();
             };
         });
         // Column type events
-        thead.querySelectorAll('select.col-name').forEach(sel=>{
-            sel.onchange = ()=>{
+        thead.querySelectorAll('select.col-name').forEach(sel => {
+            sel.onchange = () => {
                 const ci = parseInt(sel.dataset.type);
                 currentSheet.dados.columns[ci].type = sel.value;
                 scheduleAutoSave();
                 renderGrid();
             };
+        });
+        // Sort events
+        thead.querySelectorAll('.sort-btn').forEach(btn => {
+            btn.onclick = () => {
+                const ci = parseInt(btn.dataset.sort);
+                if (sortCol === ci) {
+                    sortDir = sortDir === 'none' ? 'asc' : sortDir === 'asc' ? 'desc' : 'none';
+                } else {
+                    sortCol = ci; sortDir = 'asc';
+                }
+                renderGrid();
+            };
+        });
+        // Filter events
+        thead.querySelectorAll('.filter-input').forEach(inp => {
+            inp.oninput = () => {
+                const ci = inp.dataset.fc;
+                filters[ci] = inp.value;
+                renderGrid();
+                // Re-focus this filter after re-render
+                setTimeout(() => {
+                    const el = document.querySelector(`.filter-input[data-fc="${ci}"]`);
+                    if (el) { el.focus(); el.selectionStart = el.selectionEnd = el.value.length; }
+                }, 10);
+            };
+        });
+
+        // Show formula results for all formula cells on initial render
+        tbody.querySelectorAll('.grid-cell.formula').forEach(cell => {
+            const r = parseInt(cell.dataset.r), c = parseInt(cell.dataset.c);
+            const raw = currentSheet.dados.rows[r][c];
+            const result = getCellDisplay(raw, c, currentSheet.dados.rows, cols, cols[c].type);
+            if (result !== null) cell.value = result;
         });
     }
 
@@ -594,6 +770,82 @@
         scheduleAutoSave();
     };
 
+    /* ═══ DUPLICATE SHEET ═══ */
+    async function duplicateSheet(id) {
+        try {
+            let sheet;
+            if (navigator.onLine && !id.startsWith('local_')) {
+                sheet = await api('/spreadsheets/' + id);
+            } else {
+                sheet = await OfflineDB.get('spreadsheets', id);
+            }
+            if (!sheet) { toast('Planilha não encontrada', 'danger'); return; }
+            const body = {
+                nome: sheet.nome + ' (cópia)',
+                descricao: sheet.descricao || '',
+                dados: JSON.parse(JSON.stringify(sheet.dados))
+            };
+            if (navigator.onLine) {
+                const saved = await api('/spreadsheets', { method: 'POST', body: JSON.stringify(body) });
+                await OfflineDB.put('spreadsheets', saved);
+                toast('Planilha duplicada!');
+            } else {
+                const local = { id: 'local_' + Date.now(), ...body, _offline: true, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+                await OfflineDB.put('spreadsheets', local);
+                await SyncEngine.queueAction({ type: 'create', store: 'spreadsheets', endpoint: '/spreadsheets', data: body, localId: local.id });
+                toast('Duplicada offline', 'warning');
+            }
+            loadSheets();
+        } catch (err) { toast(err.message, 'danger'); }
+    }
+
+    /* ═══ MINI CHART ═══ */
+    $('btnChart').onclick = () => {
+        const wrap = $('miniChartWrap');
+        if (wrap.classList.contains('show')) { wrap.classList.remove('show'); return; }
+        wrap.classList.add('show');
+        renderMiniChart();
+    };
+
+    function renderMiniChart() {
+        if (miniChartInstance) { miniChartInstance.destroy(); miniChartInstance = null; }
+        if (!currentSheet) return;
+        const cols = currentSheet.dados.columns;
+        const rows = currentSheet.dados.rows;
+        // Find first text column for labels and numeric columns for data
+        let labelCol = cols.findIndex(c => c.type === 'text');
+        const numCols = cols.map((c, i) => (c.type === 'number' || c.type === 'currency') ? i : -1).filter(i => i >= 0);
+        if (numCols.length === 0) { toast('Nenhuma coluna numérica para gráfico', 'warning'); return; }
+        const labels = rows.map((r, i) => labelCol >= 0 ? (r[labelCol] || 'Linha ' + (i + 1)) : 'Linha ' + (i + 1));
+        const COLORS = ['#6366f1', '#22c55e', '#ef4444', '#f59e0b', '#06b6d4', '#ec4899', '#8b5cf6', '#f97316'];
+        const datasets = numCols.slice(0, 4).map((ci, idx) => ({
+            label: cols[ci].name,
+            data: rows.map(r => { const v = parseFloat(r[ci]); return isNaN(v) ? 0 : v; }),
+            backgroundColor: COLORS[idx % COLORS.length] + '99',
+            borderColor: COLORS[idx % COLORS.length],
+            borderWidth: 2,
+            borderRadius: 6,
+            barPercentage: 0.6,
+        }));
+        const chartType = numCols.length === 1 && rows.length <= 8 ? 'bar' : rows.length > 12 ? 'line' : 'bar';
+        const ctx = $('miniChart').getContext('2d');
+        miniChartInstance = new Chart(ctx, {
+            type: chartType,
+            data: { labels, datasets },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: {
+                    x: { ticks: { color: '#94a3b8', font: { size: 9 }, maxTicksLimit: 12 }, grid: { display: false } },
+                    y: { ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: 'rgba(30,41,59,.5)' }, border: { dash: [3, 3] } }
+                },
+                plugins: {
+                    legend: { labels: { color: '#e2e8f0', padding: 8, font: { size: 10 }, usePointStyle: true, pointStyle: 'circle' } },
+                    tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.raw.toLocaleString('pt-BR')}` } }
+                }
+            }
+        });
+    }
+
     /* ═══ EXPORT CSV ═══ */
     $('btnExport').onclick = ()=>{
         const cols = currentSheet.dados.columns;
@@ -610,6 +862,13 @@
         a.click();
         URL.revokeObjectURL(url);
         toast('CSV exportado!');
+    };
+
+    /* ═══ DUPLICATE CURRENT SHEET ═══ */
+    $('btnDuplicate').onclick = async () => {
+        if (!currentSheet) return;
+        await saveSheet();
+        await duplicateSheet(currentSheet.id);
     };
 
     /* ═══ BACK ═══ */

@@ -309,11 +309,11 @@
         <a href="#" id="bnLogout"><i class="bi bi-box-arrow-left"></i>Sair</a>
     </nav>
 
-    <!-- MODAL: Nova Transação -->
+    <!-- MODAL: Nova/Editar Transação -->
     <div class="modal-overlay" id="modal">
         <div class="modal-box">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
-                <h3 style="margin:0">Nova Transação</h3>
+                <h3 style="margin:0" id="modalTitle">Nova Transação</h3>
                 <button class="btn-close-modal" id="modalClose"><i class="bi bi-x-lg"></i></button>
             </div>
             <form id="txForm">
@@ -330,6 +330,7 @@
                     </div>
                     <div class="form-group"><label>Data</label><input type="date" class="form-input" id="txData" required></div>
                 </div>
+                <input type="hidden" id="txEditId" value="">
                 <button type="submit" class="btn-submit" id="txSubmit">Salvar</button>
             </form>
         </div>
@@ -437,14 +438,42 @@
     };
 
     /* ═══ MODAL ═══ */
-    function openModal(){$('modal').classList.add('open');$('txData').value=new Date().toISOString().slice(0,10)}
-    function closeModal(){$('modal').classList.remove('open')}
+    function openModal(editTx){
+        if(editTx){
+            $('modalTitle').textContent='Editar Transação';
+            $('txEditId').value=editTx.id;
+            $('txTipo').value=editTx.tipo;
+            $('txValor').value=editTx.valor;
+            $('txDesc').value=editTx.descricao;
+            $('txData').value=(editTx.data||'').slice(0,10);
+            // set categoria
+            const catSel=$('txCat');
+            const catVal=editTx.categoria||'Outros';
+            if([...catSel.options].some(o=>o.value===catVal))catSel.value=catVal;
+            else catSel.value='Outros';
+            $('txSubmit').textContent='Atualizar';
+        } else {
+            $('modalTitle').textContent='Nova Transação';
+            $('txEditId').value='';
+            $('txForm').reset();
+            $('txData').value=new Date().toISOString().slice(0,10);
+            $('txSubmit').textContent='Salvar';
+        }
+        $('modal').classList.add('open');
+    }
+    function closeModal(){$('modal').classList.remove('open');$('txEditId').value=''}
     $('modalClose').onclick=closeModal;
     $('modal').onclick=e=>{if(e.target===$('modal'))closeModal()};
+
+    function askEditTx(id){
+        const tx=allTx.find(t=>t.id===id);
+        if(tx)openModal(tx);
+    }
 
     $('txForm').onsubmit=async e=>{
         e.preventDefault();
         const btn=$('txSubmit');btn.disabled=true;btn.textContent='Salvando…';
+        const editId=$('txEditId').value;
         const body={
             tipo:$('txTipo').value,
             valor:parseFloat($('txValor').value),
@@ -452,26 +481,44 @@
             data:$('txData').value,
             categoria:$('txCat').value
         };
-        if(!body.descricao||!body.valor||!body.data){toast('Preencha todos os campos','warning');btn.disabled=false;btn.textContent='Salvar';return}
+        if(!body.descricao||!body.valor||!body.data){toast('Preencha todos os campos','warning');btn.disabled=false;btn.textContent=editId?'Atualizar':'Salvar';return}
 
-        if(navigator.onLine){
-            try{
-                const saved = await api('/transactions',{method:'POST',body:JSON.stringify(body)});
-                await OfflineDB.put('transactions', saved);
-                toast('Transação salva!');
-            }catch(err){toast(err.message,'danger');btn.disabled=false;btn.textContent='Salvar';return}
+        if(editId){
+            // EDIT existing transaction
+            if(navigator.onLine && !editId.startsWith('local_')){
+                try{
+                    const updated = await api('/transactions/'+editId,{method:'PUT',body:JSON.stringify(body)});
+                    await OfflineDB.put('transactions', updated);
+                    toast('Transação atualizada!');
+                }catch(err){toast(err.message,'danger');btn.disabled=false;btn.textContent='Atualizar';return}
+            } else {
+                const localTx = { ...body, id: editId, _offline: true };
+                await OfflineDB.put('transactions', localTx);
+                if(!editId.startsWith('local_')){
+                    await SyncEngine.queueAction({type:'update', store:'transactions', endpoint:'/transactions/'+editId, data:body});
+                }
+                toast('Atualizado offline','warning');
+            }
         } else {
-            // Offline: save locally + queue sync
-            const localTx = { ...body, id: 'local_'+Date.now(), _offline: true };
-            await OfflineDB.put('transactions', localTx);
-            await SyncEngine.queueAction({
-                type: 'create',
-                store: 'transactions',
-                endpoint: '/transactions',
-                data: body,
-                localId: localTx.id
-            });
-            toast('Salvo offline — será sincronizado','warning');
+            // CREATE new transaction
+            if(navigator.onLine){
+                try{
+                    const saved = await api('/transactions',{method:'POST',body:JSON.stringify(body)});
+                    await OfflineDB.put('transactions', saved);
+                    toast('Transação salva!');
+                }catch(err){toast(err.message,'danger');btn.disabled=false;btn.textContent='Salvar';return}
+            } else {
+                const localTx = { ...body, id: 'local_'+Date.now(), _offline: true };
+                await OfflineDB.put('transactions', localTx);
+                await SyncEngine.queueAction({
+                    type: 'create',
+                    store: 'transactions',
+                    endpoint: '/transactions',
+                    data: body,
+                    localId: localTx.id
+                });
+                toast('Salvo offline — será sincronizado','warning');
+            }
         }
         closeModal();$('txForm').reset();load();
         btn.disabled=false;btn.textContent='Salvar';
@@ -597,7 +644,10 @@
             <td style="white-space:nowrap;color:var(--text2)">${fmtDate(t.data)}</td>
             <td><span class="tx-badge ${t.tipo}">${t.tipo==='renda'?'↑ Renda':'↓ Gasto'}</span></td>
             <td style="text-align:right;font-weight:600;color:${t.tipo==='renda'?'var(--green)':'var(--red)'}">${fmt(t.valor)}</td>
-            <td><button class="tx-del" onclick="askDeleteTx('${t.id}')" title="Excluir"><i class="bi bi-trash3"></i></button></td>
+            <td style="white-space:nowrap">
+                <button class="tx-del" onclick="askEditTx('${t.id}')" title="Editar" style="color:var(--primary)"><i class="bi bi-pencil-square"></i></button>
+                <button class="tx-del" onclick="askDeleteTx('${t.id}')" title="Excluir"><i class="bi bi-trash3"></i></button>
+            </td>
         </tr>`).join('');
     }
 

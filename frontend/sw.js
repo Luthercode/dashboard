@@ -1,5 +1,5 @@
-// Service Worker v3 — Offline-first com cache robusto
-const CACHE_NAME = 'dashboard-fin-v3';
+// Service Worker v4 — Offline-first com cache robusto
+const CACHE_NAME = 'dashboard-fin-v4';
 const STATIC_ASSETS = [
     './',
     './dashboard.html',

@@ -70,6 +70,13 @@ class TransactionCreate(BaseModel):
 class LayoutSave(BaseModel):
     layout: dict
 
+class TransactionUpdate(BaseModel):
+    tipo: Optional[str] = Field(None, pattern=r"^(renda|gasto)$")
+    valor: Optional[float] = Field(None, gt=0)
+    descricao: Optional[str] = Field(None, min_length=1, max_length=200)
+    categoria: Optional[str] = Field(None, max_length=50)
+    data: Optional[str] = None  # formato YYYY-MM-DD
+
 class SpreadsheetCreate(BaseModel):
     nome: str = Field(min_length=1, max_length=100)
     descricao: str = Field(default="", max_length=500)
@@ -190,6 +197,22 @@ def delete_transaction(tx_id: str, user_id: str = Depends(get_current_user_id)):
     if not res.data:
         raise HTTPException(status_code=404, detail="Transação não encontrada")
     return {"ok": True}
+
+@app.put("/transactions/{tx_id}")
+def update_transaction(tx_id: str, body: TransactionUpdate, user_id: str = Depends(get_current_user_id)):
+    """Atualiza uma transação existente do usuário."""
+    updates = body.model_dump(exclude_none=True)
+    if not updates:
+        raise HTTPException(status_code=400, detail="Nenhum campo para atualizar")
+    if "data" in updates:
+        try:
+            datetime.strptime(updates["data"], "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Data deve estar no formato YYYY-MM-DD")
+    res = supabase.table("transactions").update(updates).eq("id", tx_id).eq("user_id", user_id).execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Transação não encontrada")
+    return res.data[0]
 
 # ── Endpoint de Resumo ───────────────────────────────────────────────────────
 
@@ -486,6 +509,181 @@ SPREADSHEET_TEMPLATES = [
                 ["Outubro", 6000, 4500, 500, ""],
                 ["Novembro", 6000, 4500, 500, ""],
                 ["Dezembro", 7000, 6000, 500, "13° salário"],
+            ],
+        },
+    },
+    {
+        "id": "cartao-credito",
+        "nome": "Controle Cartão de Crédito",
+        "descricao": "Fatura, limite e parcelas do cartão",
+        "icone": "bi-credit-card-2-front",
+        "cor": "#ec4899",
+        "dados": {
+            "columns": [
+                {"id": "c1", "name": "Compra", "type": "text"},
+                {"id": "c2", "name": "Data", "type": "date"},
+                {"id": "c3", "name": "Valor Total", "type": "currency"},
+                {"id": "c4", "name": "Parcelas", "type": "number"},
+                {"id": "c5", "name": "Parcela Atual", "type": "text"},
+                {"id": "c6", "name": "Valor Parcela", "type": "currency"},
+            ],
+            "rows": [
+                ["TV Samsung 55\"", "2026-01-15", 3200, 10, "4/10", 320],
+                ["iPhone 15", "2026-02-20", 5400, 12, "3/12", 450],
+                ["Restaurante", "2026-04-05", 180, 1, "1/1", 180],
+                ["Spotify anual", "2026-03-01", 240, 1, "1/1", 240],
+                ["Passagem aérea", "2026-03-10", 1800, 6, "2/6", 300],
+            ],
+        },
+    },
+    {
+        "id": "investimentos",
+        "nome": "Carteira de Investimentos",
+        "descricao": "Acompanhe seus investimentos e rendimentos",
+        "icone": "bi-graph-up",
+        "cor": "#14b8a6",
+        "dados": {
+            "columns": [
+                {"id": "c1", "name": "Ativo", "type": "text"},
+                {"id": "c2", "name": "Tipo", "type": "text"},
+                {"id": "c3", "name": "Investido", "type": "currency"},
+                {"id": "c4", "name": "Valor Atual", "type": "currency"},
+                {"id": "c5", "name": "Rendimento %", "type": "number"},
+                {"id": "c6", "name": "Vencimento", "type": "date"},
+            ],
+            "rows": [
+                ["Tesouro Selic 2029", "Renda Fixa", 10000, 11200, 12.0, "2029-03-01"],
+                ["CDB 120% CDI", "Renda Fixa", 5000, 5650, 13.0, "2027-06-01"],
+                ["PETR4", "Ações", 3000, 3450, 15.0, ""],
+                ["IVVB11", "ETF", 4000, 4800, 20.0, ""],
+                ["Bitcoin", "Crypto", 2000, 2800, 40.0, ""],
+                ["Poupança", "Renda Fixa", 8000, 8480, 6.0, ""],
+            ],
+        },
+    },
+    {
+        "id": "controle-dividas",
+        "nome": "Controle de Dívidas",
+        "descricao": "Organize e quite suas dívidas",
+        "icone": "bi-exclamation-diamond",
+        "cor": "#f43f5e",
+        "dados": {
+            "columns": [
+                {"id": "c1", "name": "Dívida", "type": "text"},
+                {"id": "c2", "name": "Credor", "type": "text"},
+                {"id": "c3", "name": "Valor Original", "type": "currency"},
+                {"id": "c4", "name": "Saldo Devedor", "type": "currency"},
+                {"id": "c5", "name": "Parcela Mensal", "type": "currency"},
+                {"id": "c6", "name": "Juros % a.m.", "type": "number"},
+                {"id": "c7", "name": "Previsão Quitação", "type": "date"},
+            ],
+            "rows": [
+                ["Financiamento Carro", "Banco X", 45000, 28000, 1200, 1.2, "2028-08-01"],
+                ["Empréstimo Pessoal", "Banco Y", 10000, 6500, 580, 1.8, "2027-05-01"],
+                ["Cartão de Crédito", "Nubank", 3000, 3000, 150, 14.0, "2028-02-01"],
+            ],
+        },
+    },
+    {
+        "id": "comparacao-precos",
+        "nome": "Comparação de Preços",
+        "descricao": "Compare preços entre lojas e encontre o melhor negócio",
+        "icone": "bi-shop",
+        "cor": "#06b6d4",
+        "dados": {
+            "columns": [
+                {"id": "c1", "name": "Produto", "type": "text"},
+                {"id": "c2", "name": "Loja A", "type": "currency"},
+                {"id": "c3", "name": "Loja B", "type": "currency"},
+                {"id": "c4", "name": "Loja C", "type": "currency"},
+                {"id": "c5", "name": "Menor Preço", "type": "currency"},
+                {"id": "c6", "name": "Economia", "type": "currency"},
+            ],
+            "rows": [
+                ["Arroz 5kg", 27.90, 25.50, 26.80, 25.50, 2.40],
+                ["Óleo de Soja", 8.90, 9.50, 7.99, 7.99, 1.51],
+                ["Café 500g", 18.90, 16.50, 17.80, 16.50, 2.40],
+                ["Sabão em pó", 22.00, 19.90, 21.50, 19.90, 2.10],
+                ["Leite UHT", 5.49, 4.99, 5.29, 4.99, 0.50],
+            ],
+        },
+    },
+    {
+        "id": "freelance-projetos",
+        "nome": "Controle de Freelances",
+        "descricao": "Gerencie projetos, prazos e pagamentos freelancer",
+        "icone": "bi-laptop",
+        "cor": "#f97316",
+        "dados": {
+            "columns": [
+                {"id": "c1", "name": "Cliente", "type": "text"},
+                {"id": "c2", "name": "Projeto", "type": "text"},
+                {"id": "c3", "name": "Valor", "type": "currency"},
+                {"id": "c4", "name": "Início", "type": "date"},
+                {"id": "c5", "name": "Entrega", "type": "date"},
+                {"id": "c6", "name": "Status", "type": "text"},
+                {"id": "c7", "name": "Pago?", "type": "text"},
+            ],
+            "rows": [
+                ["Maria Silva", "Landing Page", 2500, "2026-03-01", "2026-03-20", "Entregue", "Sim"],
+                ["Tech Corp", "Dashboard React", 8000, "2026-03-15", "2026-04-30", "Em andamento", "50%"],
+                ["Loja ABC", "E-commerce", 12000, "2026-04-01", "2026-06-01", "Em andamento", "30%"],
+                ["João Pereira", "App Mobile", 15000, "2026-04-10", "2026-07-10", "Negociando", "Não"],
+            ],
+        },
+    },
+    {
+        "id": "contas-fixas",
+        "nome": "Contas Fixas Mensais",
+        "descricao": "Controle todas suas contas fixas e vencimentos",
+        "icone": "bi-receipt-cutoff",
+        "cor": "#a855f7",
+        "dados": {
+            "columns": [
+                {"id": "c1", "name": "Conta", "type": "text"},
+                {"id": "c2", "name": "Vencimento (dia)", "type": "number"},
+                {"id": "c3", "name": "Valor Médio", "type": "currency"},
+                {"id": "c4", "name": "Última Fatura", "type": "currency"},
+                {"id": "c5", "name": "Pago?", "type": "text"},
+                {"id": "c6", "name": "Forma Pgto", "type": "text"},
+            ],
+            "rows": [
+                ["Aluguel", 5, 1500, 1500, "Sim", "Pix"],
+                ["Energia", 10, 180, 195, "Sim", "Débito Auto"],
+                ["Água", 15, 80, 72, "Não", "Boleto"],
+                ["Internet", 20, 120, 120, "Sim", "Crédito"],
+                ["Celular", 12, 65, 65, "Sim", "Crédito"],
+                ["Streaming", 1, 55, 55, "Sim", "Crédito"],
+                ["Academia", 5, 100, 100, "Sim", "Débito"],
+                ["Seguro Carro", 25, 250, 250, "Não", "Boleto"],
+                ["Plano Saúde", 10, 400, 400, "Sim", "Débito Auto"],
+                ["Condomínio", 5, 350, 370, "Sim", "Boleto"],
+            ],
+        },
+    },
+    {
+        "id": "viagem",
+        "nome": "Planejamento de Viagem",
+        "descricao": "Organize custos e itinerário da viagem",
+        "icone": "bi-airplane",
+        "cor": "#0ea5e9",
+        "dados": {
+            "columns": [
+                {"id": "c1", "name": "Item", "type": "text"},
+                {"id": "c2", "name": "Categoria", "type": "text"},
+                {"id": "c3", "name": "Estimado", "type": "currency"},
+                {"id": "c4", "name": "Real", "type": "currency"},
+                {"id": "c5", "name": "Reservado?", "type": "text"},
+            ],
+            "rows": [
+                ["Passagem Aérea (ida/volta)", "Transporte", 1500, 1350, "Sim"],
+                ["Hotel 5 noites", "Hospedagem", 2000, 1800, "Sim"],
+                ["Seguro Viagem", "Seguro", 200, 180, "Sim"],
+                ["Alimentação (5 dias)", "Alimentação", 800, 0, "Não"],
+                ["Passeios e Tours", "Lazer", 600, 0, "Não"],
+                ["Transporte Local", "Transporte", 300, 0, "Não"],
+                ["Compras/Souvenir", "Compras", 500, 0, "Não"],
+                ["Emergência", "Reserva", 400, 0, "—"],
             ],
         },
     },
