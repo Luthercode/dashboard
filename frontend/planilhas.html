@@ -417,6 +417,7 @@
 
     function renderTemplates(){
         const g = $('tplGrid');
+        if (!g) return;
         let filtered = templates;
         if (searchQuery) {
             filtered = templates.filter(t =>
@@ -475,6 +476,7 @@
 
     function renderSheets(){
         const g = $('sheetsGrid');
+        if (!g) return;
         let filtered = sheets;
         if (searchQuery) {
             filtered = sheets.filter(s =>
