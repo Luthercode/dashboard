@@ -1,11 +1,11 @@
 {
     "name": "Dashboard Financeiro",
     "short_name": "Finanças",
-    "description": "Dashboard financeiro pessoal",
+    "description": "Dashboard financeiro pessoal com planilhas",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#f3f4f6",
-    "theme_color": "#4f46e5",
+    "background_color": "#0b0f1a",
+    "theme_color": "#0a0e1a",
     "orientation": "any",
     "icons": [
         {

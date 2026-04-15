@@ -22,6 +22,17 @@ CREATE TABLE IF NOT EXISTS dashboard_layouts (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- Tabela de planilhas do usuário
+CREATE TABLE IF NOT EXISTS spreadsheets (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    nome VARCHAR(100) NOT NULL,
+    descricao VARCHAR(500) DEFAULT '',
+    dados JSONB NOT NULL DEFAULT '{}',
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
 -- =============================================================
 -- Row Level Security (RLS) — cada usuário só acessa seus dados
 -- =============================================================

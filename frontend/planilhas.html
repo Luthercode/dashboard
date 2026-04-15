@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Planilhas — Dashboard Financeiro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0e1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{overflow-x:hidden;width:100%;max-width:100vw}
+    :root{
+        --bg:#0b0f1a;--bg2:#111827;--card:#151c2c;--card2:#1a2235;--card-hover:#1e2a40;
+        --border:#1e293b;--border2:#2a3548;
+        --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+        --primary:#6366f1;--primary-glow:rgba(99,102,241,.2);
+        --green:#22c55e;--green-bg:rgba(34,197,94,.12);
+        --red:#ef4444;--red-bg:rgba(239,68,68,.12);
+        --amber:#f59e0b;--amber-bg:rgba(245,158,11,.12);
+        --blue:#3b82f6;--blue-bg:rgba(59,130,246,.12);
+        --cyan:#06b6d4;--cyan-bg:rgba(6,182,212,.12);
+        --sidebar-w:220px;--radius:14px;--radius-sm:10px;
+    }
+    body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;display:flex;min-height:100vh;-webkit-font-smoothing:antialiased}
+    ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+    .sidebar{width:var(--sidebar-w);background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform .3s}
+    .sb-brand{padding:1.2rem 1rem .8rem;display:flex;align-items:center;gap:.55rem}
+    .sb-logo{width:30px;height:30px;background:var(--primary);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.8rem;color:#fff;font-weight:700}
+    .sb-brand span{font-weight:700;font-size:.95rem}
+    .sb-nav{flex:1;padding:.25rem .6rem}
+    .sb-nav a{display:flex;align-items:center;gap:.6rem;padding:.55rem .75rem;border-radius:var(--radius-sm);color:var(--text2);font-size:.84rem;font-weight:500;text-decoration:none;transition:all .15s;margin-bottom:1px}
+    .sb-nav a:hover{background:var(--card2);color:var(--text)}
+    .sb-nav a.active{background:var(--primary);color:#fff}
+    .sb-nav a i{font-size:1rem;width:18px;text-align:center}
+    .sb-nav .divider{border-top:1px solid var(--border);margin:.6rem 0}
+
+    .main{margin-left:var(--sidebar-w);flex:1;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;max-width:calc(100vw - var(--sidebar-w))}
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:.55rem 1.25rem;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;gap:.5rem;flex-wrap:wrap}
+    .topbar-left{display:flex;align-items:center;gap:.75rem}
+    .topbar-left h1{font-size:1.1rem;font-weight:700}
+    .menu-btn{display:none;background:none;border:none;color:var(--text);font-size:1.25rem;cursor:pointer;padding:.25rem}
+    .topbar-right{display:flex;align-items:center;gap:.5rem}
+
+    .offline-bar{display:none;align-items:center;justify-content:center;gap:.5rem;padding:.35rem;background:var(--amber-bg);border-bottom:1px solid var(--amber);font-size:.75rem;font-weight:600;color:var(--amber)}
+    .offline-bar.show{display:flex}
+
+    .content{padding:1rem 1.25rem;display:flex;flex-direction:column;gap:1rem}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.1rem;transition:box-shadow .2s}
+    .card:hover{box-shadow:0 0 20px rgba(0,0,0,.15)}
+
+    /* ── Buttons ── */
+    .btn{display:inline-flex;align-items:center;gap:.4rem;border:none;border-radius:8px;padding:.4rem .85rem;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .15s}
+    .btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{opacity:.9}
+    .btn-secondary{background:var(--card2);color:var(--text2);border:1px solid var(--border)}.btn-secondary:hover{background:var(--card-hover);color:var(--text)}
+    .btn-danger{background:var(--red);color:#fff}.btn-danger:hover{opacity:.9}
+    .btn-sm{padding:.3rem .6rem;font-size:.75rem}
+    .btn-icon{background:none;border:1px solid var(--border);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--text2);cursor:pointer;font-size:.9rem}
+    .btn-icon:hover{background:var(--card2);color:var(--text);border-color:var(--primary)}
+
+    /* ── Views ── */
+    .view{display:none}.view.active{display:block}
+
+    /* ── Template Grid ── */
+    .tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.85rem}
+    .tpl-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+    .tpl-card:hover{border-color:var(--primary);box-shadow:0 0 25px rgba(99,102,241,.15);transform:translateY(-2px)}
+    .tpl-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+    .tpl-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#fff;margin-bottom:.7rem}
+    .tpl-name{font-size:.95rem;font-weight:700;margin-bottom:.25rem}
+    .tpl-desc{font-size:.75rem;color:var(--text3);line-height:1.4}
+    .tpl-badge{position:absolute;top:.7rem;right:.7rem;font-size:.62rem;padding:.12rem .4rem;border-radius:5px;background:var(--primary-glow);color:var(--primary);font-weight:600}
+
+    /* ── Sheets List ── */
+    .sheets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.85rem}
+    .sheet-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;cursor:pointer;transition:all .2s;position:relative}
+    .sheet-card:hover{border-color:var(--primary);box-shadow:0 0 20px rgba(99,102,241,.1)}
+    .sheet-name{font-size:.9rem;font-weight:700;margin-bottom:.2rem}
+    .sheet-desc{font-size:.72rem;color:var(--text3);margin-bottom:.5rem}
+    .sheet-meta{display:flex;gap:1rem;font-size:.68rem;color:var(--text3)}
+    .sheet-actions{position:absolute;top:.6rem;right:.6rem;display:flex;gap:.3rem}
+    .sheet-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:.85rem;padding:.2rem;border-radius:4px}
+    .sheet-del:hover{color:var(--red)}
+
+    /* ── Spreadsheet Editor ── */
+    .editor-bar{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem}
+    .editor-title{font-size:1rem;font-weight:700;flex:1;background:none;border:none;color:var(--text);outline:none;min-width:150px;padding:.2rem .4rem;border-radius:6px}
+    .editor-title:focus{background:var(--bg2);border:1px solid var(--primary)}
+    .editor-desc{font-size:.78rem;color:var(--text3);background:none;border:none;outline:none;width:100%;padding:.2rem .4rem;border-radius:6px}
+    .editor-desc:focus{background:var(--bg2);color:var(--text);border:1px solid var(--border)}
+    .editor-tools{display:flex;gap:.3rem;flex-wrap:wrap}
+
+    .grid-wrap{overflow:auto;border:1px solid var(--border);border-radius:var(--radius-sm);max-height:65vh}
+    .grid-table{width:100%;border-collapse:collapse;min-width:500px}
+    .grid-table th{background:var(--card2);font-size:.72rem;text-transform:uppercase;letter-spacing:.3px;color:var(--text3);font-weight:600;padding:.45rem .6rem;text-align:left;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5;white-space:nowrap}
+    .grid-table th .col-name{background:none;border:none;color:var(--text2);font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.3px;outline:none;width:100%;cursor:text}
+    .grid-table th .col-name:focus{color:var(--text);background:var(--bg2);border-radius:4px;padding:0 .2rem}
+    .grid-table td{padding:0;border-bottom:1px solid var(--border);border-right:1px solid var(--border)}
+    .grid-table td:last-child{border-right:none}
+    .grid-table tr:hover td{background:rgba(99,102,241,.03)}
+    .grid-table .row-num{width:40px;text-align:center;font-size:.68rem;color:var(--text3);background:var(--card2);padding:.35rem;border-right:1px solid var(--border);font-weight:600;user-select:none}
+    .grid-cell{width:100%;background:none;border:none;color:var(--text);font-size:.82rem;padding:.4rem .6rem;outline:none;font-family:inherit}
+    .grid-cell:focus{background:var(--bg2);box-shadow:inset 0 0 0 1.5px var(--primary)}
+    .grid-cell.currency{text-align:right;font-variant-numeric:tabular-nums}
+    .grid-cell.number{text-align:right;font-variant-numeric:tabular-nums}
+
+    .grid-footer{display:flex;align-items:center;justify-content:space-between;padding:.5rem .6rem;background:var(--card2);border-top:1px solid var(--border);border-radius:0 0 var(--radius-sm) var(--radius-sm);font-size:.72rem;color:var(--text3)}
+    .grid-sum{font-weight:700;color:var(--primary)}
+
+    .autosave-indicator{font-size:.7rem;color:var(--text3);display:flex;align-items:center;gap:.25rem}
+    .autosave-indicator.saved{color:var(--green)}
+    .autosave-indicator.saving{color:var(--amber)}
+
+    /* ── Confirm ── */
+    .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:250;display:none;align-items:center;justify-content:center;padding:1rem}
+    .confirm-overlay.open{display:flex}
+    .confirm-box{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);padding:1.25rem;max-width:340px;text-align:center}
+    .confirm-box p{font-size:.9rem;margin-bottom:1rem}
+    .confirm-actions{display:flex;gap:.5rem;justify-content:center}
+    .confirm-actions button{padding:.4rem 1rem;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;border:none}
+    .btn-cancel{background:var(--card2);color:var(--text2);border:1px solid var(--border)!important}
+
+    /* ── Modal New Sheet ── */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:1rem}
+    .modal-overlay.open{display:flex}
+    .modal-box{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);width:100%;max-width:420px;padding:1.5rem}
+    .form-group{margin-bottom:.75rem}
+    .form-group label{display:block;font-size:.75rem;font-weight:600;color:var(--text2);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.3px}
+    .form-input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.5rem .7rem;color:var(--text);font-size:.85rem;outline:none}
+    .form-input:focus{border-color:var(--primary)}
+    .btn-submit{width:100%;background:var(--primary);border:none;border-radius:10px;padding:.6rem;color:#fff;font-size:.88rem;font-weight:600;cursor:pointer;margin-top:.5rem}
+
+    .toast{position:fixed;bottom:1.25rem;right:1.25rem;padding:.65rem 1rem;border-radius:10px;font-size:.82rem;font-weight:500;color:#fff;z-index:300;transform:translateY(100px);opacity:0;transition:all .3s;max-width:320px}
+    .toast.show{transform:translateY(0);opacity:1}
+    .toast.success{background:#166534;border:1px solid #22c55e}.toast.danger{background:#7f1d1d;border:1px solid #ef4444}.toast.warning{background:#78350f;border:1px solid #f59e0b}
+
+    .empty{text-align:center;padding:3rem 1rem;color:var(--text3)}.empty i{font-size:3rem;display:block;margin-bottom:.8rem;opacity:.3}.empty p{font-size:.85rem;margin-top:.3rem}
+
+    .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:95;display:none}
+    .sidebar-overlay.open{display:block}
+    .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);z-index:90;padding:.3rem 0 env(safe-area-inset-bottom,.3rem);justify-content:space-around}
+    .bottom-nav a{display:flex;flex-direction:column;align-items:center;gap:.1rem;color:var(--text3);text-decoration:none;font-size:.6rem;font-weight:500;padding:.3rem .35rem;border-radius:8px;transition:color .15s}
+    .bottom-nav a i{font-size:1.1rem}
+    .bottom-nav a.active{color:var(--primary)}
+
+    @media(max-width:768px){
+        .sidebar{transform:translateX(-100%)}
+        .sidebar.open{transform:translateX(0);box-shadow:4px 0 30px rgba(0,0,0,.3)}
+        .main{margin-left:0;max-width:100vw}
+        .menu-btn{display:block}
+        .bottom-nav{display:flex}
+        .content{padding:.75rem;padding-bottom:4.5rem}
+        .tpl-grid,.sheets-grid{grid-template-columns:1fr}
+        .topbar{padding:.4rem .75rem}
+    }
+    </style>
+</head>
+<body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="sidebar" id="sidebar">
+        <div class="sb-brand"><div class="sb-logo">F</div><span>Financeiro</span></div>
+        <nav class="sb-nav">
+            <a href="dashboard.html"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+            <a href="#" class="active" id="navPlanilhas"><i class="bi bi-table"></i> Planilhas</a>
+            <div class="divider"></div>
+            <a href="#" id="navLogout"><i class="bi bi-box-arrow-left"></i> Sair</a>
+        </nav>
+    </aside>
+
+    <div class="main">
+        <div class="offline-bar" id="offlineBar"><i class="bi bi-wifi-off"></i> Modo offline</div>
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="menu-btn" id="menuBtn"><i class="bi bi-list"></i></button>
+                <h1 id="pageTitle">Planilhas</h1>
+            </div>
+            <div class="topbar-right" id="topbarRight">
+                <button class="btn btn-primary btn-sm" id="btnNewSheet"><i class="bi bi-plus-lg"></i> Nova Planilha</button>
+            </div>
+        </header>
+
+        <div class="content">
+            <!-- VIEW: LIST -->
+            <div class="view active" id="viewList">
+                <div style="margin-bottom:.75rem">
+                    <h2 style="font-size:.9rem;color:var(--text2);font-weight:600;margin-bottom:.5rem"><i class="bi bi-lightning-charge" style="color:var(--amber)"></i> Templates Prontos</h2>
+                    <div class="tpl-grid" id="tplGrid"></div>
+                </div>
+                <div>
+                    <h2 style="font-size:.9rem;color:var(--text2);font-weight:600;margin-bottom:.5rem"><i class="bi bi-folder" style="color:var(--primary)"></i> Minhas Planilhas</h2>
+                    <div class="sheets-grid" id="sheetsGrid">
+                        <div class="empty" id="emptySheets"><i class="bi bi-table"></i>Nenhuma planilha ainda<p>Use um template ou crie do zero</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: EDITOR -->
+            <div class="view" id="viewEditor">
+                <div class="card" style="padding:.75rem 1rem">
+                    <div class="editor-bar">
+                        <button class="btn btn-secondary btn-sm" id="btnBack"><i class="bi bi-arrow-left"></i> Voltar</button>
+                        <input class="editor-title" id="editorTitle" placeholder="Nome da planilha" maxlength="100">
+                        <div class="autosave-indicator" id="autosave"><i class="bi bi-check-circle"></i> Salvo</div>
+                    </div>
+                    <input class="editor-desc" id="editorDesc" placeholder="Descrição (opcional)" maxlength="500">
+                    <div class="editor-tools" style="margin:.6rem 0">
+                        <button class="btn btn-secondary btn-sm" id="btnAddRow"><i class="bi bi-plus"></i> Linha</button>
+                        <button class="btn btn-secondary btn-sm" id="btnAddCol"><i class="bi bi-plus"></i> Coluna</button>
+                        <button class="btn btn-secondary btn-sm" id="btnDelRow"><i class="bi bi-dash"></i> Linha</button>
+                        <button class="btn btn-secondary btn-sm" id="btnDelCol"><i class="bi bi-dash"></i> Coluna</button>
+                        <button class="btn btn-secondary btn-sm" id="btnExport"><i class="bi bi-download"></i> CSV</button>
+                    </div>
+                    <div class="grid-wrap" id="gridWrap">
+                        <table class="grid-table" id="gridTable"><thead></thead><tbody></tbody></table>
+                    </div>
+                    <div class="grid-footer">
+                        <span id="gridInfo">0 linhas × 0 colunas</span>
+                        <span class="grid-sum" id="gridSum"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="dashboard.html"><i class="bi bi-grid-1x2-fill"></i>Home</a>
+        <a href="#" class="active"><i class="bi bi-table"></i>Planilhas</a>
+        <a href="#" id="bnNew"><i class="bi bi-plus-circle-fill" style="font-size:1.5rem;color:var(--primary)"></i>Novo</a>
+        <a href="dashboard.html"><i class="bi bi-bar-chart-line"></i>Gráficos</a>
+        <a href="#" id="bnLogout"><i class="bi bi-box-arrow-left"></i>Sair</a>
+    </nav>
+
+    <!-- MODAL: Nova Planilha Vazia -->
+    <div class="modal-overlay" id="modalNew">
+        <div class="modal-box">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+                <h3 style="margin:0;font-size:1.05rem;font-weight:700">Nova Planilha</h3>
+                <button style="background:none;border:none;color:var(--text3);font-size:1.2rem;cursor:pointer" id="modalNewClose"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <form id="newSheetForm">
+                <div class="form-group"><label>Nome</label><input class="form-input" id="newSheetName" maxlength="100" placeholder="Ex: Controle Abril" required></div>
+                <div class="form-group"><label>Descrição</label><input class="form-input" id="newSheetDesc" maxlength="500" placeholder="Opcional"></div>
+                <div class="form-group">
+                    <label>Colunas iniciais</label>
+                    <select class="form-input" id="newSheetCols">
+                        <option value="3">3 colunas</option>
+                        <option value="4" selected>4 colunas</option>
+                        <option value="5">5 colunas</option>
+                        <option value="6">6 colunas</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-submit">Criar Planilha</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- CONFIRM DELETE -->
+    <div class="confirm-overlay" id="confirmDel">
+        <div class="confirm-box">
+            <p><i class="bi bi-exclamation-triangle" style="color:var(--amber);font-size:1.5rem;display:block;margin-bottom:.5rem"></i>Excluir esta planilha?</p>
+            <div class="confirm-actions">
+                <button class="btn-cancel" id="confirmNo">Cancelar</button>
+                <button class="btn btn-danger" id="confirmYes">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="config.js"></script>
+    <script src="db.js"></script>
+    <script>
+    const TOKEN = localStorage.getItem('access_token');
+    if(!TOKEN) window.location.href='index.html';
+    const $=id=>document.getElementById(id);
+    function headers(){return{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN}}
+    async function api(path,opts={}){
+        const r=await fetch(APP_CONFIG.API_URL+path,{...opts,headers:{...headers(),...(opts.headers||{})}});
+        if(r.status===401){localStorage.clear();location.href='index.html';return}
+        if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||'Erro')}
+        return r.json();
+    }
+    function toast(msg,type='success'){const t=$('toast');t.textContent=msg;t.className='toast '+type+' show';setTimeout(()=>t.classList.remove('show'),3000)}
+    function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
+
+    // Sidebar mobile
+    $('menuBtn').onclick=()=>{$('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('open')};
+    $('sidebarOverlay').onclick=()=>{$('sidebar').classList.remove('open');$('sidebarOverlay').classList.remove('open')};
+    $('navLogout').onclick=e=>{e.preventDefault();localStorage.clear();location.href='index.html'};
+    if($('bnLogout'))$('bnLogout').onclick=e=>{e.preventDefault();localStorage.clear();location.href='index.html'};
+    // Offline bar
+    function updateOnline(){$('offlineBar').classList.toggle('show',!navigator.onLine)}
+    window.addEventListener('online',updateOnline);window.addEventListener('offline',updateOnline);updateOnline();
+
+    /* ═══ STATE ═══ */
+    let templates = [];
+    let sheets = [];
+    let currentSheet = null; // {id, nome, descricao, dados:{columns,rows}}
+    let autoSaveTimer = null;
+    let deleteSheetId = null;
+
+    /* ═══ VIEWS ═══ */
+    function showView(v){
+        document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+        $(v).classList.add('active');
+        if(v==='viewList'){
+            $('pageTitle').textContent='Planilhas';
+            $('topbarRight').style.display='';
+        } else {
+            $('pageTitle').textContent='Editor';
+            $('topbarRight').style.display='none';
+        }
+    }
+
+    /* ═══ LOAD TEMPLATES ═══ */
+    async function loadTemplates(){
+        try{
+            templates = await api('/spreadsheets/templates');
+        }catch{
+            templates = [];
+        }
+        renderTemplates();
+    }
+
+    function renderTemplates(){
+        const g = $('tplGrid');
+        if(!templates.length){g.innerHTML='<div style="color:var(--text3);font-size:.8rem">Sem templates disponíveis</div>';return}
+        g.innerHTML = templates.map((t,i)=>`
+            <div class="tpl-card" onclick="useTemplate(${i})" style="cursor:pointer">
+                <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${t.cor}"></div>
+                <div class="tpl-icon" style="background:${t.cor}"><i class="bi ${t.icone}"></i></div>
+                <div class="tpl-name">${esc(t.nome)}</div>
+                <div class="tpl-desc">${esc(t.descricao)}</div>
+                <div class="tpl-badge">Template</div>
+            </div>
+        `).join('');
+    }
+
+    async function useTemplate(idx){
+        const t = templates[idx];
+        if(!t)return;
+        try{
+            const body = {nome: t.nome, descricao: t.descricao, dados: t.dados};
+            if(navigator.onLine){
+                const saved = await api('/spreadsheets',{method:'POST',body:JSON.stringify(body)});
+                await OfflineDB.put('spreadsheets', saved);
+                openEditor(saved);
+            } else {
+                const local = {id:'local_'+Date.now(), ...body, _offline:true, created_at:new Date().toISOString(), updated_at:new Date().toISOString()};
+                await OfflineDB.put('spreadsheets', local);
+                await SyncEngine.queueAction({type:'create', store:'spreadsheets', endpoint:'/spreadsheets', data:body, localId:local.id});
+                openEditor(local);
+                toast('Planilha criada offline','warning');
+            }
+            loadSheets();
+        }catch(err){toast(err.message,'danger')}
+    }
+
+    /* ═══ LOAD SHEETS ═══ */
+    async function loadSheets(){
+        try{
+            if(navigator.onLine){
+                sheets = await api('/spreadsheets');
+                await OfflineDB.putAll('spreadsheets', sheets);
+            } else {
+                sheets = await OfflineDB.getAll('spreadsheets');
+            }
+        }catch{
+            sheets = await OfflineDB.getAll('spreadsheets').catch(()=>[]);
+        }
+        renderSheets();
+    }
+
+    function renderSheets(){
+        const g = $('sheetsGrid');
+        const em = $('emptySheets');
+        if(!sheets.length){g.innerHTML='';g.appendChild(em);em.style.display='';return}
+        em.style.display='none';
+        g.innerHTML = sheets.map(s=>`
+            <div class="sheet-card" onclick="openSheetById('${s.id}')">
+                <div class="sheet-actions">
+                    <button class="sheet-del" onclick="event.stopPropagation();askDeleteSheet('${s.id}')" title="Excluir"><i class="bi bi-trash3"></i></button>
+                </div>
+                <div class="sheet-name">${esc(s.nome)}${s._offline?' <i class="bi bi-cloud-arrow-up" style="color:var(--amber);font-size:.7rem"></i>':''}</div>
+                <div class="sheet-desc">${esc(s.descricao||'')}</div>
+                <div class="sheet-meta">
+                    <span><i class="bi bi-clock"></i> ${s.updated_at ? new Date(s.updated_at).toLocaleDateString('pt-BR') : '—'}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    /* ═══ OPEN SHEET ═══ */
+    async function openSheetById(id){
+        try{
+            let sheet;
+            if(navigator.onLine && !id.startsWith('local_')){
+                sheet = await api('/spreadsheets/'+id);
+                await OfflineDB.put('spreadsheets', sheet);
+            } else {
+                sheet = await OfflineDB.get('spreadsheets', id);
+            }
+            if(sheet) openEditor(sheet);
+            else toast('Planilha não encontrada','danger');
+        }catch(err){
+            const local = await OfflineDB.get('spreadsheets', id);
+            if(local) openEditor(local);
+            else toast(err.message,'danger');
+        }
+    }
+
+    function openEditor(sheet){
+        currentSheet = JSON.parse(JSON.stringify(sheet));
+        if(!currentSheet.dados) currentSheet.dados = {columns:[], rows:[]};
+        if(!currentSheet.dados.columns) currentSheet.dados.columns = [];
+        if(!currentSheet.dados.rows) currentSheet.dados.rows = [];
+        $('editorTitle').value = currentSheet.nome || '';
+        $('editorDesc').value = currentSheet.descricao || '';
+        renderGrid();
+        showView('viewEditor');
+        setAutoSaveStatus('saved');
+    }
+
+    /* ═══ GRID RENDER ═══ */
+    function renderGrid(){
+        const cols = currentSheet.dados.columns;
+        const rows = currentSheet.dados.rows;
+        const thead = document.querySelector('#gridTable thead');
+        const tbody = document.querySelector('#gridTable tbody');
+
+        // Header
+        let hhtml = '<tr><th class="row-num">#</th>';
+        cols.forEach((c,ci)=>{
+            hhtml += `<th><input class="col-name" value="${esc(c.name)}" data-ci="${ci}" maxlength="30" 
+                style="min-width:80px"><br><select class="col-name" data-type="${ci}" style="font-size:.6rem;background:none;border:none;color:var(--text3);outline:none;cursor:pointer;margin-top:2px">
+                <option value="text" ${c.type==='text'?'selected':''}>Texto</option>
+                <option value="number" ${c.type==='number'?'selected':''}>Número</option>
+                <option value="currency" ${c.type==='currency'?'selected':''}>Moeda</option>
+                <option value="date" ${c.type==='date'?'selected':''}>Data</option>
+            </select></th>`;
+        });
+        hhtml += '</tr>';
+        thead.innerHTML = hhtml;
+
+        // Body
+        let bhtml = '';
+        rows.forEach((row,ri)=>{
+            bhtml += `<tr><td class="row-num">${ri+1}</td>`;
+            cols.forEach((c,ci)=>{
+                const val = row[ci] !== undefined && row[ci] !== null ? row[ci] : '';
+                const cls = (c.type==='currency'||c.type==='number') ? ' '+c.type : '';
+                bhtml += `<td><input class="grid-cell${cls}" value="${esc(String(val))}" data-r="${ri}" data-c="${ci}"></td>`;
+            });
+            bhtml += '</tr>';
+        });
+        tbody.innerHTML = bhtml;
+
+        // Info
+        $('gridInfo').textContent = `${rows.length} linhas × ${cols.length} colunas`;
+        updateSums();
+
+        // Events
+        tbody.querySelectorAll('.grid-cell').forEach(cell=>{
+            cell.oninput = () => {
+                const r = parseInt(cell.dataset.r), c = parseInt(cell.dataset.c);
+                let v = cell.value;
+                const type = cols[c]?.type;
+                if(type==='number'||type==='currency'){
+                    const n = parseFloat(v.replace(',','.'));
+                    currentSheet.dados.rows[r][c] = isNaN(n) ? v : n;
+                } else {
+                    currentSheet.dados.rows[r][c] = v;
+                }
+                scheduleAutoSave();
+                updateSums();
+            };
+            cell.onkeydown = e => {
+                if(e.key==='Tab'){
+                    e.preventDefault();
+                    const r = parseInt(cell.dataset.r), c = parseInt(cell.dataset.c);
+                    let nr=r, nc=c+1;
+                    if(nc>=cols.length){nc=0;nr++}
+                    if(nr>=rows.length) return;
+                    const next = tbody.querySelector(`input[data-r="${nr}"][data-c="${nc}"]`);
+                    if(next)next.focus();
+                }
+                if(e.key==='Enter'){
+                    e.preventDefault();
+                    const r = parseInt(cell.dataset.r), c = parseInt(cell.dataset.c);
+                    const nr = r+1;
+                    if(nr>=rows.length) return;
+                    const next = tbody.querySelector(`input[data-r="${nr}"][data-c="${c}"]`);
+                    if(next)next.focus();
+                }
+            };
+        });
+
+        // Column name events
+        thead.querySelectorAll('input.col-name').forEach(inp=>{
+            inp.oninput = ()=>{
+                const ci = parseInt(inp.dataset.ci);
+                currentSheet.dados.columns[ci].name = inp.value;
+                scheduleAutoSave();
+            };
+        });
+        // Column type events
+        thead.querySelectorAll('select.col-name').forEach(sel=>{
+            sel.onchange = ()=>{
+                const ci = parseInt(sel.dataset.type);
+                currentSheet.dados.columns[ci].type = sel.value;
+                scheduleAutoSave();
+                renderGrid();
+            };
+        });
+    }
+
+    function updateSums(){
+        const cols = currentSheet.dados.columns;
+        const rows = currentSheet.dados.rows;
+        const sums = [];
+        cols.forEach((c,ci)=>{
+            if(c.type==='currency'||c.type==='number'){
+                let s = 0;
+                rows.forEach(r=>{const v=parseFloat(r[ci]);if(!isNaN(v))s+=v});
+                const fmt = c.type==='currency' ? new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(s) : s.toLocaleString('pt-BR');
+                sums.push(`${c.name}: ${fmt}`);
+            }
+        });
+        $('gridSum').textContent = sums.join('  |  ');
+    }
+
+    /* ═══ AUTO SAVE ═══ */
+    function scheduleAutoSave(){
+        setAutoSaveStatus('saving');
+        if(autoSaveTimer) clearTimeout(autoSaveTimer);
+        autoSaveTimer = setTimeout(saveSheet, 1500);
+    }
+
+    function setAutoSaveStatus(status){
+        const el = $('autosave');
+        if(status==='saved'){el.innerHTML='<i class="bi bi-check-circle"></i> Salvo';el.className='autosave-indicator saved'}
+        else if(status==='saving'){el.innerHTML='<i class="bi bi-arrow-repeat"></i> Salvando…';el.className='autosave-indicator saving'}
+    }
+
+    async function saveSheet(){
+        if(!currentSheet) return;
+        currentSheet.nome = $('editorTitle').value.trim() || 'Sem nome';
+        currentSheet.descricao = $('editorDesc').value.trim();
+        const body = {nome:currentSheet.nome, descricao:currentSheet.descricao, dados:currentSheet.dados};
+        try{
+            if(navigator.onLine && !currentSheet.id.startsWith('local_')){
+                await api('/spreadsheets/'+currentSheet.id,{method:'PUT',body:JSON.stringify(body)});
+            } else {
+                await OfflineDB.put('spreadsheets', {...currentSheet, ...body, updated_at:new Date().toISOString()});
+                if(!currentSheet.id.startsWith('local_')){
+                    await SyncEngine.queueAction({type:'update', store:'spreadsheets', endpoint:'/spreadsheets/'+currentSheet.id, data:body});
+                }
+            }
+            setAutoSaveStatus('saved');
+        }catch(err){
+            await OfflineDB.put('spreadsheets', {...currentSheet, ...body, updated_at:new Date().toISOString()});
+            setAutoSaveStatus('saved');
+        }
+    }
+
+    /* ═══ ADD / REMOVE ROWS / COLS ═══ */
+    $('btnAddRow').onclick = ()=>{
+        const ncols = currentSheet.dados.columns.length;
+        currentSheet.dados.rows.push(new Array(ncols).fill(''));
+        renderGrid();
+        scheduleAutoSave();
+    };
+    $('btnAddCol').onclick = ()=>{
+        const num = currentSheet.dados.columns.length + 1;
+        currentSheet.dados.columns.push({id:'c'+Date.now(), name:'Coluna '+num, type:'text'});
+        currentSheet.dados.rows.forEach(r=>r.push(''));
+        renderGrid();
+        scheduleAutoSave();
+    };
+    $('btnDelRow').onclick = ()=>{
+        if(currentSheet.dados.rows.length<=1) return;
+        currentSheet.dados.rows.pop();
+        renderGrid();
+        scheduleAutoSave();
+    };
+    $('btnDelCol').onclick = ()=>{
+        if(currentSheet.dados.columns.length<=1) return;
+        currentSheet.dados.columns.pop();
+        currentSheet.dados.rows.forEach(r=>r.pop());
+        renderGrid();
+        scheduleAutoSave();
+    };
+
+    /* ═══ EXPORT CSV ═══ */
+    $('btnExport').onclick = ()=>{
+        const cols = currentSheet.dados.columns;
+        const rows = currentSheet.dados.rows;
+        let csv = cols.map(c=>'"'+c.name.replace(/"/g,'""')+'"').join(',')+'\n';
+        rows.forEach(r=>{
+            csv += r.map(v=>'"'+(String(v||'')).replace(/"/g,'""')+'"').join(',')+'\n';
+        });
+        const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = (currentSheet.nome||'planilha').replace(/[^a-zA-Z0-9À-ú ]/g,'_')+'.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+        toast('CSV exportado!');
+    };
+
+    /* ═══ BACK ═══ */
+    $('btnBack').onclick = async ()=>{
+        await saveSheet();
+        currentSheet = null;
+        showView('viewList');
+        loadSheets();
+    };
+    $('editorTitle').oninput = ()=>scheduleAutoSave();
+    $('editorDesc').oninput = ()=>scheduleAutoSave();
+
+    /* ═══ NEW SHEET (blank) ═══ */
+    $('btnNewSheet').onclick = ()=>$('modalNew').classList.add('open');
+    $('modalNewClose').onclick = ()=>$('modalNew').classList.remove('open');
+    $('modalNew').onclick = e=>{if(e.target===$('modalNew'))$('modalNew').classList.remove('open')};
+    if($('bnNew'))$('bnNew').onclick=e=>{e.preventDefault();$('modalNew').classList.add('open')};
+
+    $('newSheetForm').onsubmit = async e=>{
+        e.preventDefault();
+        const nome = $('newSheetName').value.trim();
+        if(!nome){toast('Nome obrigatório','warning');return}
+        const ncols = parseInt($('newSheetCols').value);
+        const cols = [];
+        for(let i=0;i<ncols;i++) cols.push({id:'c'+(i+1), name:'Coluna '+(i+1), type:'text'});
+        const dados = {columns:cols, rows:[new Array(ncols).fill(''), new Array(ncols).fill(''), new Array(ncols).fill('')]};
+        const body = {nome, descricao:$('newSheetDesc').value.trim(), dados};
+        try{
+            if(navigator.onLine){
+                const saved = await api('/spreadsheets',{method:'POST',body:JSON.stringify(body)});
+                await OfflineDB.put('spreadsheets', saved);
+                $('modalNew').classList.remove('open');
+                $('newSheetForm').reset();
+                openEditor(saved);
+            } else {
+                const local = {id:'local_'+Date.now(), ...body, _offline:true, created_at:new Date().toISOString(), updated_at:new Date().toISOString()};
+                await OfflineDB.put('spreadsheets', local);
+                await SyncEngine.queueAction({type:'create', store:'spreadsheets', endpoint:'/spreadsheets', data:body, localId:local.id});
+                $('modalNew').classList.remove('open');
+                $('newSheetForm').reset();
+                openEditor(local);
+                toast('Planilha criada offline','warning');
+            }
+            loadSheets();
+        }catch(err){toast(err.message,'danger')}
+    };
+
+    /* ═══ DELETE SHEET ═══ */
+    function askDeleteSheet(id){
+        deleteSheetId = id;
+        $('confirmDel').classList.add('open');
+    }
+    $('confirmNo').onclick=()=>{deleteSheetId=null;$('confirmDel').classList.remove('open')};
+    $('confirmDel').onclick=e=>{if(e.target===$('confirmDel')){deleteSheetId=null;$('confirmDel').classList.remove('open')}};
+    $('confirmYes').onclick=async()=>{
+        if(!deleteSheetId)return;
+        const id=deleteSheetId;
+        $('confirmDel').classList.remove('open');
+        try{
+            if(navigator.onLine && !id.startsWith('local_')){
+                await api('/spreadsheets/'+id,{method:'DELETE'});
+            } else if(!id.startsWith('local_')){
+                await SyncEngine.queueAction({type:'delete', store:'spreadsheets', endpoint:'/spreadsheets/'+id, data:{}});
+            }
+            await OfflineDB.del('spreadsheets', id);
+            toast('Planilha excluída');
+            loadSheets();
+        }catch(err){toast(err.message,'danger')}
+        deleteSheetId=null;
+    };
+
+    /* ═══ INIT ═══ */
+    OfflineDB.open().then(()=>{
+        SyncEngine.init();
+        loadTemplates();
+        loadSheets();
+    });
+    if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+    </script>
+</body>
+</html>

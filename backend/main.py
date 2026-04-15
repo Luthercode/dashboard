@@ -70,6 +70,16 @@ class TransactionCreate(BaseModel):
 class LayoutSave(BaseModel):
     layout: dict
 
+class SpreadsheetCreate(BaseModel):
+    nome: str = Field(min_length=1, max_length=100)
+    descricao: str = Field(default="", max_length=500)
+    dados: dict  # {columns:[{id,name,type}], rows:[[values]]}
+
+class SpreadsheetUpdate(BaseModel):
+    nome: Optional[str] = Field(None, max_length=100)
+    descricao: Optional[str] = Field(None, max_length=500)
+    dados: Optional[dict] = None
+
 # ── Autenticação ─────────────────────────────────────────────────────────────
 
 def get_current_user_id(authorization: str = Header(...)) -> str:
@@ -172,6 +182,14 @@ def create_transaction(body: TransactionCreate, user_id: str = Depends(get_curre
     if not res.data:
         raise HTTPException(status_code=500, detail="Erro ao salvar transação")
     return res.data[0]
+
+@app.delete("/transactions/{tx_id}")
+def delete_transaction(tx_id: str, user_id: str = Depends(get_current_user_id)):
+    """Deleta uma transação do usuário."""
+    res = supabase.table("transactions").delete().eq("id", tx_id).eq("user_id", user_id).execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Transação não encontrada")
+    return {"ok": True}
 
 # ── Endpoint de Resumo ───────────────────────────────────────────────────────
 
@@ -327,6 +345,210 @@ def save_layout(body: LayoutSave, user_id: str = Depends(get_current_user_id)):
         pass
 
     return {"id": None, "user_id": user_id, "layout": body.layout}
+
+# ── Endpoints de Planilhas ────────────────────────────────────────────────────
+
+SPREADSHEET_TEMPLATES = [
+    {
+        "id": "orcamento-mensal",
+        "nome": "Orçamento Mensal",
+        "descricao": "Planeje receitas e despesas do mês",
+        "icone": "bi-calendar-month",
+        "cor": "#6366f1",
+        "dados": {
+            "columns": [
+                {"id": "c1", "name": "Categoria", "type": "text"},
+                {"id": "c2", "name": "Previsto", "type": "currency"},
+                {"id": "c3", "name": "Realizado", "type": "currency"},
+                {"id": "c4", "name": "Diferença", "type": "currency"},
+            ],
+            "rows": [
+                ["Salário", 5000, 5000, 0],
+                ["Aluguel", 1500, 1500, 0],
+                ["Alimentação", 800, 0, 800],
+                ["Transporte", 400, 0, 400],
+                ["Saúde", 200, 0, 200],
+                ["Lazer", 300, 0, 300],
+                ["Educação", 150, 0, 150],
+                ["Outros", 200, 0, 200],
+            ],
+        },
+    },
+    {
+        "id": "controle-gastos",
+        "nome": "Controle de Gastos Diário",
+        "descricao": "Registre gastos dia a dia",
+        "icone": "bi-cash-stack",
+        "cor": "#ef4444",
+        "dados": {
+            "columns": [
+                {"id": "c1", "name": "Data", "type": "date"},
+                {"id": "c2", "name": "Descrição", "type": "text"},
+                {"id": "c3", "name": "Categoria", "type": "text"},
+                {"id": "c4", "name": "Valor", "type": "currency"},
+                {"id": "c5", "name": "Forma Pgto", "type": "text"},
+            ],
+            "rows": [
+                ["2026-04-01", "Supermercado", "Alimentação", 250, "Débito"],
+                ["2026-04-02", "Uber", "Transporte", 35, "Crédito"],
+                ["2026-04-03", "Farmácia", "Saúde", 80, "Pix"],
+            ],
+        },
+    },
+    {
+        "id": "metas-economia",
+        "nome": "Metas de Economia",
+        "descricao": "Acompanhe suas metas financeiras",
+        "icone": "bi-piggy-bank",
+        "cor": "#22c55e",
+        "dados": {
+            "columns": [
+                {"id": "c1", "name": "Meta", "type": "text"},
+                {"id": "c2", "name": "Objetivo (R$)", "type": "currency"},
+                {"id": "c3", "name": "Economizado", "type": "currency"},
+                {"id": "c4", "name": "Prazo", "type": "date"},
+                {"id": "c5", "name": "Status", "type": "text"},
+            ],
+            "rows": [
+                ["Reserva Emergência", 15000, 5000, "2026-12-31", "Em progresso"],
+                ["Viagem", 8000, 2000, "2026-07-01", "Em progresso"],
+                ["Notebook novo", 5000, 3500, "2026-06-01", "Quase lá"],
+            ],
+        },
+    },
+    {
+        "id": "fluxo-caixa",
+        "nome": "Fluxo de Caixa",
+        "descricao": "Controle entradas e saídas mensais",
+        "icone": "bi-graph-up-arrow",
+        "cor": "#3b82f6",
+        "dados": {
+            "columns": [
+                {"id": "c1", "name": "Mês", "type": "text"},
+                {"id": "c2", "name": "Entradas", "type": "currency"},
+                {"id": "c3", "name": "Saídas", "type": "currency"},
+                {"id": "c4", "name": "Saldo", "type": "currency"},
+                {"id": "c5", "name": "Acumulado", "type": "currency"},
+            ],
+            "rows": [
+                ["Janeiro", 6000, 4500, 1500, 1500],
+                ["Fevereiro", 6000, 5000, 1000, 2500],
+                ["Março", 6500, 4800, 1700, 4200],
+                ["Abril", 0, 0, 0, 4200],
+            ],
+        },
+    },
+    {
+        "id": "lista-compras",
+        "nome": "Lista de Compras",
+        "descricao": "Organize suas compras com preços",
+        "icone": "bi-cart-check",
+        "cor": "#f59e0b",
+        "dados": {
+            "columns": [
+                {"id": "c1", "name": "Item", "type": "text"},
+                {"id": "c2", "name": "Quantidade", "type": "number"},
+                {"id": "c3", "name": "Preço Unit.", "type": "currency"},
+                {"id": "c4", "name": "Total", "type": "currency"},
+                {"id": "c5", "name": "Comprado", "type": "text"},
+            ],
+            "rows": [
+                ["Arroz 5kg", 1, 25.90, 25.90, "Não"],
+                ["Feijão 1kg", 2, 8.50, 17.00, "Não"],
+                ["Leite 1L", 6, 5.90, 35.40, "Não"],
+            ],
+        },
+    },
+    {
+        "id": "planejamento-anual",
+        "nome": "Planejamento Anual",
+        "descricao": "Visão geral das finanças do ano",
+        "icone": "bi-calendar-range",
+        "cor": "#8b5cf6",
+        "dados": {
+            "columns": [
+                {"id": "c1", "name": "Mês", "type": "text"},
+                {"id": "c2", "name": "Renda Prevista", "type": "currency"},
+                {"id": "c3", "name": "Gastos Previstos", "type": "currency"},
+                {"id": "c4", "name": "Investimento", "type": "currency"},
+                {"id": "c5", "name": "Observação", "type": "text"},
+            ],
+            "rows": [
+                ["Janeiro", 6000, 4500, 500, ""],
+                ["Fevereiro", 6000, 4500, 500, ""],
+                ["Março", 6000, 4500, 500, ""],
+                ["Abril", 6000, 5000, 300, "IPTU"],
+                ["Maio", 6000, 4500, 500, ""],
+                ["Junho", 6000, 4500, 500, ""],
+                ["Julho", 6000, 5500, 200, "Férias"],
+                ["Agosto", 6000, 4500, 500, ""],
+                ["Setembro", 6000, 4500, 500, ""],
+                ["Outubro", 6000, 4500, 500, ""],
+                ["Novembro", 6000, 4500, 500, ""],
+                ["Dezembro", 7000, 6000, 500, "13° salário"],
+            ],
+        },
+    },
+]
+
+@app.get("/spreadsheets/templates")
+def get_templates():
+    """Retorna templates pré-prontos de planilhas."""
+    return SPREADSHEET_TEMPLATES
+
+@app.get("/spreadsheets")
+def list_spreadsheets(user_id: str = Depends(get_current_user_id)):
+    """Lista planilhas do usuário."""
+    res = supabase.table("spreadsheets").select("id, nome, descricao, created_at, updated_at").eq("user_id", user_id).order("updated_at", desc=True).execute()
+    return res.data
+
+@app.get("/spreadsheets/{sheet_id}")
+def get_spreadsheet(sheet_id: str, user_id: str = Depends(get_current_user_id)):
+    """Retorna uma planilha completa com dados."""
+    res = supabase.table("spreadsheets").select("*").eq("id", sheet_id).eq("user_id", user_id).limit(1).execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Planilha não encontrada")
+    return res.data[0]
+
+@app.post("/spreadsheets")
+def create_spreadsheet(body: SpreadsheetCreate, user_id: str = Depends(get_current_user_id)):
+    """Cria uma nova planilha."""
+    row = {
+        "user_id": user_id,
+        "nome": body.nome,
+        "descricao": body.descricao,
+        "dados": body.dados,
+    }
+    res = supabase.table("spreadsheets").insert(row).execute()
+    if not res.data:
+        raise HTTPException(status_code=500, detail="Erro ao criar planilha")
+    return res.data[0]
+
+@app.put("/spreadsheets/{sheet_id}")
+def update_spreadsheet(sheet_id: str, body: SpreadsheetUpdate, user_id: str = Depends(get_current_user_id)):
+    """Atualiza uma planilha existente."""
+    update = {}
+    if body.nome is not None:
+        update["nome"] = body.nome
+    if body.descricao is not None:
+        update["descricao"] = body.descricao
+    if body.dados is not None:
+        update["dados"] = body.dados
+    if not update:
+        raise HTTPException(status_code=400, detail="Nada para atualizar")
+    update["updated_at"] = datetime.now().isoformat()
+    res = supabase.table("spreadsheets").update(update).eq("id", sheet_id).eq("user_id", user_id).execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Planilha não encontrada")
+    return res.data[0]
+
+@app.delete("/spreadsheets/{sheet_id}")
+def delete_spreadsheet(sheet_id: str, user_id: str = Depends(get_current_user_id)):
+    """Deleta uma planilha."""
+    res = supabase.table("spreadsheets").delete().eq("id", sheet_id).eq("user_id", user_id).execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Planilha não encontrada")
+    return {"ok": True}
 
 # ── Health Check ─────────────────────────────────────────────────────────────
 

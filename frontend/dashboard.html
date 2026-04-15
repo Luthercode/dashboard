@@ -43,6 +43,7 @@
     .sb-nav a.active i{color:#fff}
     .sb-nav a i{font-size:1rem;width:18px;text-align:center}
     .sb-nav .divider{border-top:1px solid var(--border);margin:.6rem 0}
+    .sb-footer{padding:.6rem;border-top:1px solid var(--border)}
 
     /* ── MAIN ── */
     .main{margin-left:var(--sidebar-w);flex:1;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;max-width:calc(100vw - var(--sidebar-w))}
@@ -68,6 +69,14 @@
     .icon-btn{background:none;border:1px solid var(--border);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--text2);cursor:pointer;transition:all .15s;font-size:.9rem}
     .icon-btn:hover{background:var(--card2);color:var(--text);border-color:var(--primary)}
 
+    /* ── OFFLINE INDICATOR ── */
+    .offline-bar{display:none;align-items:center;justify-content:center;gap:.5rem;padding:.35rem;background:var(--amber-bg);border-bottom:1px solid var(--amber);font-size:.75rem;font-weight:600;color:var(--amber)}
+    .offline-bar.show{display:flex}
+    .sync-badge{display:none;align-items:center;gap:.25rem;background:var(--primary-glow);color:var(--primary);padding:.15rem .5rem;border-radius:6px;font-size:.7rem;font-weight:600}
+    .sync-badge.show{display:inline-flex}
+    .sync-badge.syncing{animation:pulse 1s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
     /* ── GRID ── */
     .grid{padding:1rem 1.25rem;display:flex;flex-direction:column;gap:.85rem}
 
@@ -87,7 +96,7 @@
     .card-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0}
     .ic-green{background:var(--green-bg);color:var(--green)}.ic-red{background:var(--red-bg);color:var(--red)}.ic-blue{background:var(--blue-bg);color:var(--blue)}.ic-amber{background:var(--amber-bg);color:var(--amber)}.ic-purple{background:var(--primary-glow);color:var(--primary)}.ic-cyan{background:var(--cyan-bg);color:var(--cyan)}
 
-    /* ── BALANCE CARD (special) ── */
+    /* ── BALANCE CARD ── */
     .balance-card{background:linear-gradient(135deg,var(--card) 0%,#1a1f3a 100%);position:relative;overflow:hidden}
     .balance-card::after{content:'';position:absolute;top:-40%;right:-20%;width:200px;height:200px;background:radial-gradient(circle,var(--primary-glow) 0%,transparent 70%);pointer-events:none}
     .balance-val{font-size:2rem;font-weight:700}
@@ -95,14 +104,11 @@
     .balance-change.up{background:var(--green-bg);color:var(--green)}
     .balance-change.down{background:var(--red-bg);color:var(--red)}
 
-    /* ── COIN CARDS (top stats) ── */
     .coin-card{display:flex;flex-direction:column;gap:.4rem}
     .coin-header{display:flex;align-items:center;gap:.45rem}
     .coin-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff;flex-shrink:0}
     .coin-tag{font-size:.68rem;color:var(--text3);font-weight:500}
     .coin-val{font-size:1.15rem;font-weight:700}
-    .coin-change{font-size:.7rem;font-weight:600;display:flex;align-items:center;gap:.15rem}
-    .coin-sparkline{height:32px;margin-top:auto}
 
     /* ── CHART ── */
     .chart-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
@@ -122,11 +128,13 @@
     .tx-badge{padding:.12rem .45rem;border-radius:5px;font-size:.68rem;font-weight:600}
     .tx-badge.renda{background:var(--green-bg);color:var(--green)}.tx-badge.gasto{background:var(--red-bg);color:var(--red)}
     .tx-badge.cat{background:var(--card2);color:var(--text3);font-weight:500}
+    .tx-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:.85rem;padding:.2rem;border-radius:4px;transition:color .15s}
+    .tx-del:hover{color:var(--red)}
 
     /* ── MODAL ── */
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:1rem}
     .modal-overlay.open{display:flex}
-    .modal-box{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);width:100%;max-width:420px;padding:1.5rem}
+    .modal-box{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);width:100%;max-width:420px;padding:1.5rem;max-height:90vh;overflow-y:auto}
     .modal-box h3{font-size:1.05rem;font-weight:700;margin-bottom:1rem}
     .form-group{margin-bottom:.75rem}
     .form-group label{display:block;font-size:.75rem;font-weight:600;color:var(--text2);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.3px}
@@ -137,6 +145,8 @@
     .btn-submit:hover{opacity:.9}
     .btn-submit:disabled{opacity:.5;cursor:not-allowed}
     .btn-close-modal{background:none;border:none;color:var(--text3);font-size:1.2rem;cursor:pointer;padding:.2rem}
+    .btn-danger{background:var(--red);color:#fff;border:none;border-radius:8px;padding:.4rem .8rem;font-size:.8rem;font-weight:600;cursor:pointer}
+    .btn-danger:hover{opacity:.9}
 
     /* ── TOAST ── */
     .toast{position:fixed;bottom:1.25rem;right:1.25rem;padding:.65rem 1rem;border-radius:10px;font-size:.82rem;font-weight:500;color:#fff;z-index:300;transform:translateY(100px);opacity:0;transition:all .3s;max-width:320px}
@@ -146,17 +156,24 @@
     /* ── EMPTY ── */
     .empty{text-align:center;padding:2rem 1rem;color:var(--text3)}.empty i{font-size:2.5rem;display:block;margin-bottom:.6rem;opacity:.3}
 
-    /* ── MOBILE OVERLAY ── */
+    /* ── MOBILE ── */
     .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:95;display:none}
     .sidebar-overlay.open{display:block}
-
-    /* ── BOTTOM NAV (mobile) ── */
     .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);z-index:90;padding:.3rem 0 env(safe-area-inset-bottom,.3rem);justify-content:space-around}
-    .bottom-nav a{display:flex;flex-direction:column;align-items:center;gap:.1rem;color:var(--text3);text-decoration:none;font-size:.62rem;font-weight:500;padding:.3rem .5rem;border-radius:8px;transition:color .15s}
-    .bottom-nav a i{font-size:1.15rem}
+    .bottom-nav a{display:flex;flex-direction:column;align-items:center;gap:.1rem;color:var(--text3);text-decoration:none;font-size:.6rem;font-weight:500;padding:.3rem .35rem;border-radius:8px;transition:color .15s}
+    .bottom-nav a i{font-size:1.1rem}
     .bottom-nav a.active{color:var(--primary)}
 
-    /* ── RESPONSIVE ── */
+    /* ── CONFIRM DIALOG ── */
+    .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:250;display:none;align-items:center;justify-content:center;padding:1rem}
+    .confirm-overlay.open{display:flex}
+    .confirm-box{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);padding:1.25rem;max-width:340px;text-align:center}
+    .confirm-box p{font-size:.9rem;margin-bottom:1rem}
+    .confirm-actions{display:flex;gap:.5rem;justify-content:center}
+    .confirm-actions button{padding:.4rem 1rem;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;border:none}
+    .btn-cancel{background:var(--card2);color:var(--text2);border:1px solid var(--border) !important}
+    .btn-cancel:hover{background:var(--card-hover)}
+
     @media(max-width:1024px){
         .card-row.c4{grid-template-columns:repeat(2,1fr)}
         .card-row.c3{grid-template-columns:1fr 1fr}
@@ -183,15 +200,9 @@
     </style>
 </head>
 <body>
-    <!-- SIDEBAR OVERLAY -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
-        <div class="sb-brand">
-            <div class="sb-logo">F</div>
-            <span>Financeiro</span>
-        </div>
+        <div class="sb-brand"><div class="sb-logo">F</div><span>Financeiro</span></div>
         <div class="sb-user">
             <div class="sb-avatar" id="userAvatar">U</div>
             <div class="sb-user-info">
@@ -205,17 +216,22 @@
             <a href="#" id="navTx"><i class="bi bi-receipt"></i> Transações</a>
             <a href="#" id="navCharts"><i class="bi bi-bar-chart-line"></i> Gráficos</a>
             <div class="divider"></div>
+            <a href="planilhas.html" id="navPlanilhas"><i class="bi bi-table"></i> Planilhas</a>
+            <div class="divider"></div>
             <a href="#" id="navLogout"><i class="bi bi-box-arrow-left"></i> Sair</a>
         </nav>
+        <div class="sb-footer">
+            <div class="sync-badge" id="syncBadge"><i class="bi bi-arrow-repeat"></i> <span id="syncText">0 pendentes</span></div>
+        </div>
     </aside>
 
-    <!-- MAIN -->
     <div class="main">
-        <!-- TOPBAR -->
+        <div class="offline-bar" id="offlineBar"><i class="bi bi-wifi-off"></i> Modo offline — dados salvos localmente</div>
         <header class="topbar">
             <div class="topbar-left">
                 <button class="menu-btn" id="menuBtn"><i class="bi bi-list"></i></button>
                 <h1>Dashboard</h1>
+                <div class="sync-badge" id="syncBadgeTop"><i class="bi bi-arrow-repeat"></i> <span id="syncTextTop"></span></div>
             </div>
             <div class="topbar-right">
                 <div class="period-btn" id="periodBtn">
@@ -230,137 +246,66 @@
                         <button data-p="all" class="active">Tudo</button>
                     </div>
                 </div>
-                <div class="search-wrap">
-                    <i class="bi bi-search"></i>
-                    <input type="text" id="searchInput" placeholder="Buscar…">
-                </div>
+                <div class="search-wrap"><i class="bi bi-search"></i><input type="text" id="searchInput" placeholder="Buscar…"></div>
                 <button class="icon-btn" id="btnNewTx" title="Nova Transação"><i class="bi bi-plus-lg"></i></button>
             </div>
         </header>
 
-        <!-- CONTENT -->
         <div class="grid">
-            <!-- ROW 1: Balance + Top 3 stats -->
             <div class="card-row c2-1" id="row1">
-                <!-- Balance -->
                 <div class="card balance-card">
                     <div class="card-label"><i class="bi bi-wallet2"></i> Meu Saldo</div>
-                    <div class="balance-val" id="saldoVal"><div class="skeleton" style="width:60%;height:2rem;border-radius:8px"></div></div>
+                    <div class="balance-val" id="saldoVal">—</div>
                     <div class="balance-change up" id="saldoChange" style="display:none"><i class="bi bi-arrow-up-short"></i> <span id="saldoChangeTxt"></span></div>
                     <div style="position:relative;height:80px;margin-top:.5rem"><canvas id="chartBalance"></canvas></div>
                 </div>
-                <!-- Top 3 cards -->
                 <div style="display:flex;flex-direction:column;gap:.85rem">
                     <div class="card coin-card">
-                        <div class="coin-header">
-                            <div class="coin-icon" style="background:var(--green)"><i class="bi bi-arrow-up-short"></i></div>
-                            <div><div class="coin-tag">Total Rendas</div></div>
-                        </div>
+                        <div class="coin-header"><div class="coin-icon" style="background:var(--green)"><i class="bi bi-arrow-up-short"></i></div><div><div class="coin-tag">Total Rendas</div></div></div>
                         <div class="coin-val" style="color:var(--green)" id="rendaVal">—</div>
                     </div>
                     <div class="card coin-card">
-                        <div class="coin-header">
-                            <div class="coin-icon" style="background:var(--red)"><i class="bi bi-arrow-down-short"></i></div>
-                            <div><div class="coin-tag">Total Gastos</div></div>
-                        </div>
+                        <div class="coin-header"><div class="coin-icon" style="background:var(--red)"><i class="bi bi-arrow-down-short"></i></div><div><div class="coin-tag">Total Gastos</div></div></div>
                         <div class="coin-val" style="color:var(--red)" id="gastoVal">—</div>
                     </div>
                 </div>
             </div>
 
-            <!-- ROW 2: 4 mini stat cards -->
             <div class="card-row c4" id="row2">
-                <div class="card">
-                    <div style="display:flex;justify-content:space-between;align-items:start">
-                        <div>
-                            <div class="card-label"><i class="bi bi-receipt"></i> Transações</div>
-                            <div class="card-value" style="color:var(--blue)" id="numTx">0</div>
-                            <div class="card-sub muted">no período</div>
-                        </div>
-                        <div class="card-icon ic-blue"><i class="bi bi-receipt"></i></div>
-                    </div>
-                </div>
-                <div class="card">
-                    <div style="display:flex;justify-content:space-between;align-items:start">
-                        <div>
-                            <div class="card-label"><i class="bi bi-calendar-day"></i> Média/Dia</div>
-                            <div class="card-value" style="color:var(--amber)" id="mediaVal">—</div>
-                            <div class="card-sub muted">gasto diário</div>
-                        </div>
-                        <div class="card-icon ic-amber"><i class="bi bi-calendar-day"></i></div>
-                    </div>
-                </div>
-                <div class="card">
-                    <div style="display:flex;justify-content:space-between;align-items:start">
-                        <div>
-                            <div class="card-label"><i class="bi bi-exclamation-triangle"></i> Maior Gasto</div>
-                            <div class="card-value" style="color:var(--red);font-size:1.2rem" id="maiorGVal">—</div>
-                            <div class="card-sub muted" id="maiorGDesc"></div>
-                        </div>
-                        <div class="card-icon ic-red"><i class="bi bi-exclamation-triangle"></i></div>
-                    </div>
-                </div>
-                <div class="card">
-                    <div style="display:flex;justify-content:space-between;align-items:start">
-                        <div>
-                            <div class="card-label"><i class="bi bi-trophy"></i> Maior Renda</div>
-                            <div class="card-value" style="color:var(--green);font-size:1.2rem" id="maiorRVal">—</div>
-                            <div class="card-sub muted" id="maiorRDesc"></div>
-                        </div>
-                        <div class="card-icon ic-green"><i class="bi bi-trophy"></i></div>
-                    </div>
-                </div>
+                <div class="card"><div style="display:flex;justify-content:space-between;align-items:start"><div><div class="card-label"><i class="bi bi-receipt"></i> Transações</div><div class="card-value" style="color:var(--blue)" id="numTx">0</div><div class="card-sub muted">no período</div></div><div class="card-icon ic-blue"><i class="bi bi-receipt"></i></div></div></div>
+                <div class="card"><div style="display:flex;justify-content:space-between;align-items:start"><div><div class="card-label"><i class="bi bi-calendar-day"></i> Média/Dia</div><div class="card-value" style="color:var(--amber)" id="mediaVal">—</div><div class="card-sub muted">gasto diário</div></div><div class="card-icon ic-amber"><i class="bi bi-calendar-day"></i></div></div></div>
+                <div class="card"><div style="display:flex;justify-content:space-between;align-items:start"><div><div class="card-label"><i class="bi bi-exclamation-triangle"></i> Maior Gasto</div><div class="card-value" style="color:var(--red);font-size:1.2rem" id="maiorGVal">—</div><div class="card-sub muted" id="maiorGDesc"></div></div><div class="card-icon ic-red"><i class="bi bi-exclamation-triangle"></i></div></div></div>
+                <div class="card"><div style="display:flex;justify-content:space-between;align-items:start"><div><div class="card-label"><i class="bi bi-trophy"></i> Maior Renda</div><div class="card-value" style="color:var(--green);font-size:1.2rem" id="maiorRVal">—</div><div class="card-sub muted" id="maiorRDesc"></div></div><div class="card-icon ic-green"><i class="bi bi-trophy"></i></div></div></div>
             </div>
 
-            <!-- ROW 3: Bar Chart + Donut -->
             <div class="card-row c2-1" id="chartSection">
-                <div class="card">
-                    <div class="chart-head">
-                        <span class="chart-title">Evolução Mensal</span>
-                        <span class="chart-badge" id="barYear">2026</span>
-                    </div>
-                    <div style="position:relative;height:230px"><canvas id="chartBar"></canvas></div>
-                </div>
-                <div class="card">
-                    <div class="chart-head">
-                        <span class="chart-title">Gastos por Categoria</span>
-                    </div>
-                    <div style="position:relative;height:230px"><canvas id="chartCat"></canvas></div>
-                </div>
+                <div class="card"><div class="chart-head"><span class="chart-title">Evolução Mensal</span><span class="chart-badge" id="barYear">2026</span></div><div style="position:relative;height:230px"><canvas id="chartBar"></canvas></div></div>
+                <div class="card"><div class="chart-head"><span class="chart-title">Gastos por Categoria</span></div><div style="position:relative;height:230px"><canvas id="chartCat"></canvas></div></div>
             </div>
 
-            <!-- ROW 4: Daily chart -->
             <div class="card">
-                <div class="chart-head">
-                    <span class="chart-title">Atividade Diária</span>
-                    <span class="chart-badge" id="dailyYear">2026</span>
-                </div>
+                <div class="chart-head"><span class="chart-title">Atividade Diária</span><span class="chart-badge" id="dailyYear">2026</span></div>
                 <div style="position:relative;height:180px"><canvas id="chartDaily"></canvas></div>
             </div>
 
-            <!-- ROW 5: Transactions Table -->
             <div class="card" id="txSection">
-                <div class="chart-head">
-                    <span class="chart-title">Transações Recentes</span>
-                    <span class="chart-badge" id="txCount">0 registros</span>
-                </div>
+                <div class="chart-head"><span class="chart-title">Transações Recentes</span><span class="chart-badge" id="txCount">0 registros</span></div>
                 <div style="overflow-x:auto">
                     <table class="tx-table">
-                        <thead><tr><th>Descrição</th><th>Categoria</th><th>Data</th><th>Tipo</th><th style="text-align:right">Valor</th></tr></thead>
-                        <tbody id="txBody"><tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--text3)">Carregando…</td></tr></tbody>
+                        <thead><tr><th>Descrição</th><th>Categoria</th><th>Data</th><th>Tipo</th><th style="text-align:right">Valor</th><th></th></tr></thead>
+                        <tbody id="txBody"><tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text3)">Carregando…</td></tr></tbody>
                     </table>
                 </div>
-                <div class="empty d-none" id="emptyState"><i class="bi bi-inbox"></i>Nenhuma transação. Clique em + para começar!</div>
+                <div class="empty" id="emptyState" style="display:none"><i class="bi bi-inbox"></i>Nenhuma transação. Clique em + para começar!</div>
             </div>
         </div>
     </div>
 
-    <!-- BOTTOM NAV (mobile) -->
     <nav class="bottom-nav">
         <a href="#" class="active" id="bnDash"><i class="bi bi-grid-1x2-fill"></i>Home</a>
         <a href="#" id="bnCharts"><i class="bi bi-bar-chart-line"></i>Gráficos</a>
         <a href="#" id="bnAdd"><i class="bi bi-plus-circle-fill" style="font-size:1.5rem;color:var(--primary)"></i>Novo</a>
-        <a href="#" id="bnTx"><i class="bi bi-receipt"></i>Extrato</a>
+        <a href="planilhas.html" id="bnPlanilhas"><i class="bi bi-table"></i>Planilhas</a>
         <a href="#" id="bnLogout"><i class="bi bi-box-arrow-left"></i>Sair</a>
     </nav>
 
@@ -373,45 +318,38 @@
             </div>
             <form id="txForm">
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>Tipo</label>
-                        <select class="form-input" id="txTipo"><option value="renda">💰 Renda</option><option value="gasto" selected>💸 Gasto</option></select>
-                    </div>
-                    <div class="form-group">
-                        <label>Valor (R$)</label>
-                        <input type="number" class="form-input" id="txValor" min="0.01" step="0.01" placeholder="0,00" required>
-                    </div>
+                    <div class="form-group"><label>Tipo</label><select class="form-input" id="txTipo"><option value="renda">💰 Renda</option><option value="gasto" selected>💸 Gasto</option></select></div>
+                    <div class="form-group"><label>Valor (R$)</label><input type="number" class="form-input" id="txValor" min="0.01" step="0.01" placeholder="0,00" required></div>
                 </div>
-                <div class="form-group">
-                    <label>Descrição</label>
-                    <input type="text" class="form-input" id="txDesc" maxlength="200" placeholder="Ex: Salário, Aluguel…" required>
-                </div>
+                <div class="form-group"><label>Descrição</label><input type="text" class="form-input" id="txDesc" maxlength="200" placeholder="Ex: Salário, Aluguel…" required></div>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>Categoria</label>
+                    <div class="form-group"><label>Categoria</label>
                         <select class="form-input" id="txCat">
-                            <option value="Alimentação">🍔 Alimentação</option><option value="Transporte">🚗 Transporte</option>
-                            <option value="Moradia">🏠 Moradia</option><option value="Saúde">💊 Saúde</option>
-                            <option value="Educação">📚 Educação</option><option value="Lazer">🎮 Lazer</option>
-                            <option value="Salário">💼 Salário</option><option value="Freelance">💻 Freelance</option>
-                            <option value="Investimentos">📈 Investimentos</option><option value="Compras">🛒 Compras</option>
-                            <option value="Contas">📄 Contas</option><option value="Outros" selected>📦 Outros</option>
+                            <option value="Alimentação">🍔 Alimentação</option><option value="Transporte">🚗 Transporte</option><option value="Moradia">🏠 Moradia</option><option value="Saúde">💊 Saúde</option><option value="Educação">📚 Educação</option><option value="Lazer">🎮 Lazer</option><option value="Salário">💼 Salário</option><option value="Freelance">💻 Freelance</option><option value="Investimentos">📈 Investimentos</option><option value="Compras">🛒 Compras</option><option value="Contas">📄 Contas</option><option value="Outros" selected>📦 Outros</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label>Data</label>
-                        <input type="date" class="form-input" id="txData" required>
-                    </div>
+                    <div class="form-group"><label>Data</label><input type="date" class="form-input" id="txData" required></div>
                 </div>
                 <button type="submit" class="btn-submit" id="txSubmit">Salvar</button>
             </form>
         </div>
     </div>
 
-    <!-- TOAST -->
+    <!-- CONFIRM DELETE -->
+    <div class="confirm-overlay" id="confirmDel">
+        <div class="confirm-box">
+            <p><i class="bi bi-exclamation-triangle" style="color:var(--amber);font-size:1.5rem;display:block;margin-bottom:.5rem"></i>Excluir esta transação?</p>
+            <div class="confirm-actions">
+                <button class="btn-cancel" id="confirmNo">Cancelar</button>
+                <button class="btn-danger" id="confirmYes">Excluir</button>
+            </div>
+        </div>
+    </div>
+
     <div class="toast" id="toast"></div>
 
     <script src="config.js"></script>
+    <script src="db.js"></script>
     <script>
     /* ═══ STATE ═══ */
     const TOKEN = localStorage.getItem('access_token');
@@ -426,6 +364,7 @@
     let allTx = [];
     let summary = null;
     let cBalance=null,cBar=null,cCat=null,cDaily=null;
+    let deleteTxId = null;
     const PNAMES={'7d':'7 dias','30d':'30 dias','90d':'90 dias','12m':'12 meses','all':'Tudo'};
     const COLORS=['#6366f1','#f43f5e','#22c55e','#f59e0b','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316','#06b6d4','#84cc16','#a855f7'];
     const CC={text:'#94a3b8',grid:'#1e293b'};
@@ -444,10 +383,23 @@
     function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
     function toast(msg,type='success'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';setTimeout(()=>t.classList.remove('show'),3000)}
     function logout(){localStorage.clear();location.href='index.html'}
+    const $=id=>document.getElementById(id);
+
+    /* ═══ OFFLINE / SYNC ═══ */
+    SyncEngine.init();
+    SyncEngine.onChange(({online, syncing, pending})=>{
+        $('offlineBar').classList.toggle('show', !online);
+        const show = pending > 0;
+        $('syncBadge').classList.toggle('show', show);
+        $('syncBadgeTop').classList.toggle('show', show);
+        $('syncBadge').classList.toggle('syncing', syncing);
+        $('syncBadgeTop').classList.toggle('syncing', syncing);
+        const txt = syncing ? 'Sincronizando…' : pending + ' pendente' + (pending!==1?'s':'');
+        $('syncText').textContent = txt;
+        $('syncTextTop').textContent = txt;
+    });
 
     /* ═══ NAVIGATION ═══ */
-    const $=id=>document.getElementById(id);
-    // Sidebar
     $('menuBtn').onclick=()=>{$('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('open')};
     $('sidebarOverlay').onclick=()=>{$('sidebar').classList.remove('open');$('sidebarOverlay').classList.remove('open')};
     function closeSidebar(){$('sidebar').classList.remove('open');$('sidebarOverlay').classList.remove('open')}
@@ -456,13 +408,10 @@
     $('navTx').onclick=e=>{e.preventDefault();closeSidebar();$('txSection').scrollIntoView({behavior:'smooth'})};
     $('navCharts').onclick=e=>{e.preventDefault();closeSidebar();$('chartSection').scrollIntoView({behavior:'smooth'})};
     $('navLogout').onclick=e=>{e.preventDefault();logout()};
-    // Bottom nav
     $('bnDash').onclick=e=>{e.preventDefault();window.scrollTo({top:0,behavior:'smooth'})};
     $('bnCharts').onclick=e=>{e.preventDefault();$('chartSection').scrollIntoView({behavior:'smooth'})};
     $('bnAdd').onclick=e=>{e.preventDefault();openModal()};
-    $('bnTx').onclick=e=>{e.preventDefault();$('txSection').scrollIntoView({behavior:'smooth'})};
     $('bnLogout').onclick=e=>{e.preventDefault();logout()};
-    // Topbar new tx
     $('btnNewTx').onclick=()=>openModal();
 
     /* ═══ PERIOD ═══ */
@@ -504,36 +453,128 @@
             categoria:$('txCat').value
         };
         if(!body.descricao||!body.valor||!body.data){toast('Preencha todos os campos','warning');btn.disabled=false;btn.textContent='Salvar';return}
+
+        if(navigator.onLine){
+            try{
+                const saved = await api('/transactions',{method:'POST',body:JSON.stringify(body)});
+                await OfflineDB.put('transactions', saved);
+                toast('Transação salva!');
+            }catch(err){toast(err.message,'danger');btn.disabled=false;btn.textContent='Salvar';return}
+        } else {
+            // Offline: save locally + queue sync
+            const localTx = { ...body, id: 'local_'+Date.now(), _offline: true };
+            await OfflineDB.put('transactions', localTx);
+            await SyncEngine.queueAction({
+                type: 'create',
+                store: 'transactions',
+                endpoint: '/transactions',
+                data: body,
+                localId: localTx.id
+            });
+            toast('Salvo offline — será sincronizado','warning');
+        }
+        closeModal();$('txForm').reset();load();
+        btn.disabled=false;btn.textContent='Salvar';
+    };
+
+    /* ═══ DELETE TRANSACTION ═══ */
+    function askDeleteTx(id){
+        deleteTxId = id;
+        $('confirmDel').classList.add('open');
+    }
+    $('confirmNo').onclick=()=>{deleteTxId=null;$('confirmDel').classList.remove('open')};
+    $('confirmDel').onclick=e=>{if(e.target===$('confirmDel')){deleteTxId=null;$('confirmDel').classList.remove('open')}};
+    $('confirmYes').onclick=async()=>{
+        if(!deleteTxId)return;
+        const id = deleteTxId;
+        $('confirmDel').classList.remove('open');
         try{
-            await api('/transactions',{method:'POST',body:JSON.stringify(body)});
-            toast('Transação salva!');closeModal();$('txForm').reset();load();
+            if(navigator.onLine && !id.startsWith('local_')){
+                await api('/transactions/'+id,{method:'DELETE'});
+            } else if(!id.startsWith('local_')){
+                await SyncEngine.queueAction({type:'delete', store:'transactions', endpoint:'/transactions/'+id, data:{}});
+            }
+            await OfflineDB.del('transactions', id);
+            toast('Transação excluída');
+            load();
         }catch(err){toast(err.message,'danger')}
-        finally{btn.disabled=false;btn.textContent='Salvar'}
+        deleteTxId=null;
     };
 
     /* ═══ LOAD DATA ═══ */
     async function load(){
         try{
-            const p=periodo!=='all'?`?periodo=${periodo}`:'';
-            const[s,tx]=await Promise.all([api('/summary'+p),api('/transactions'+p)]);
-            summary=s;allTx=tx;
-            renderSummary(s);renderTx(tx);
-            renderChartBalance(s.evolucao_diaria);renderChartBar(s.evolucao);renderChartCat(s.categorias_gasto);renderChartDaily(s.evolucao_diaria);
-        }catch(err){toast('Erro: '+err.message,'danger')}
+            if(navigator.onLine){
+                const p=periodo!=='all'?`?periodo=${periodo}`:'';
+                const[s,tx]=await Promise.all([api('/summary'+p),api('/transactions'+p)]);
+                summary=s;allTx=tx;
+                // Cache in IndexedDB
+                if(tx && Array.isArray(tx)) await OfflineDB.putAll('transactions', tx);
+                if(s) await OfflineDB.saveSummary(periodo, s);
+            } else {
+                // Offline: load from IndexedDB
+                allTx = await OfflineDB.getAll('transactions');
+                summary = await OfflineDB.getSummary(periodo);
+                if(!summary) summary = computeLocalSummary(allTx);
+            }
+            renderSummary(summary);renderTx(allTx);
+            renderChartBalance(summary.evolucao_diaria);renderChartBar(summary.evolucao);renderChartCat(summary.categorias_gasto);renderChartDaily(summary.evolucao_diaria);
+        }catch(err){
+            // Network error — try offline data
+            try{
+                allTx = await OfflineDB.getAll('transactions');
+                summary = await OfflineDB.getSummary(periodo) || computeLocalSummary(allTx);
+                renderSummary(summary);renderTx(allTx);
+                renderChartBalance(summary.evolucao_diaria);renderChartBar(summary.evolucao);renderChartCat(summary.categorias_gasto);renderChartDaily(summary.evolucao_diaria);
+                toast('Dados offline carregados','warning');
+            }catch{toast('Erro ao carregar dados','danger')}
+        }
+    }
+
+    /* ═══ LOCAL SUMMARY (offline fallback) ═══ */
+    function computeLocalSummary(txList){
+        let total_renda=0, total_gasto=0;
+        const monthly={}, daily={}, catGasto={}, catRenda={};
+        let maiorG=null, maiorR=null;
+        (txList||[]).forEach(t=>{
+            const d=(t.data||'').slice(0,10), m=d.slice(0,7), cat=t.categoria||'Outros';
+            if(!monthly[m])monthly[m]={renda:0,gasto:0};
+            if(!daily[d])daily[d]={renda:0,gasto:0};
+            if(t.tipo==='renda'){
+                total_renda+=t.valor;monthly[m].renda+=t.valor;daily[d].renda+=t.valor;
+                catRenda[cat]=(catRenda[cat]||0)+t.valor;
+                if(!maiorR||t.valor>maiorR.valor)maiorR={valor:t.valor,descricao:t.descricao};
+            }else{
+                total_gasto+=t.valor;monthly[m].gasto+=t.valor;daily[d].gasto+=t.valor;
+                catGasto[cat]=(catGasto[cat]||0)+t.valor;
+                if(!maiorG||t.valor>maiorG.valor)maiorG={valor:t.valor,descricao:t.descricao};
+            }
+        });
+        const diasG=Object.values(daily).filter(d=>d.gasto>0).length;
+        return {
+            total_renda, total_gasto, saldo:total_renda-total_gasto,
+            num_transacoes:(txList||[]).length,
+            media_diaria_gasto:diasG?+(total_gasto/diasG).toFixed(2):0,
+            maior_gasto:maiorG, maior_renda:maiorR,
+            evolucao:Object.entries(monthly).sort().map(([k,v])=>({mes:k,...v})),
+            evolucao_diaria:Object.entries(daily).sort().map(([k,v])=>({dia:k,...v})),
+            categorias_gasto:Object.entries(catGasto).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({nome:k,valor:v})),
+            categorias_renda:Object.entries(catRenda).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({nome:k,valor:v})),
+        };
     }
 
     /* ═══ RENDER SUMMARY ═══ */
     function renderSummary(d){
-        $('saldoVal').textContent=fmt(d.saldo);
-        // show saldo change indicator
+        if(!d)return;
+        $('saldoVal').textContent=fmt(d.saldo||0);
         if(d.total_renda>0||d.total_gasto>0){
             const pct=d.total_renda>0?Math.round(((d.saldo)/d.total_renda)*100):0;
             $('saldoChange').style.display='inline-flex';
             $('saldoChange').className='balance-change '+(d.saldo>=0?'up':'down');
             $('saldoChangeTxt').textContent=(d.saldo>=0?'+':'')+pct+'% do total de rendas';
         }
-        $('rendaVal').textContent=fmt(d.total_renda);
-        $('gastoVal').textContent=fmt(d.total_gasto);
+        $('rendaVal').textContent=fmt(d.total_renda||0);
+        $('gastoVal').textContent=fmt(d.total_gasto||0);
         $('numTx').textContent=d.num_transacoes||0;
         $('mediaVal').textContent=fmt(d.media_diaria_gasto||0);
         const mg=d.maior_gasto;
@@ -548,14 +589,15 @@
     function renderTx(list){
         const tb=$('txBody'),em=$('emptyState');
         $('txCount').textContent=(list?list.length:0)+' registros';
-        if(!list||!list.length){tb.innerHTML='';em.classList.remove('d-none');em.style.display='';return}
-        em.classList.add('d-none');em.style.display='none';
-        tb.innerHTML=list.map(t=>`<tr>
-            <td><span class="tx-name"><span class="tx-dot ${t.tipo}"></span>${esc(t.descricao)}</span></td>
+        if(!list||!list.length){tb.innerHTML='';em.style.display='';return}
+        em.style.display='none';
+        tb.innerHTML=list.map(t=>`<tr${t._offline?' style="opacity:.6"':''}>
+            <td><span class="tx-name"><span class="tx-dot ${t.tipo}"></span>${esc(t.descricao)}${t._offline?' <i class="bi bi-cloud-arrow-up" style="color:var(--amber);font-size:.7rem" title="Pendente sync"></i>':''}</span></td>
             <td><span class="tx-badge cat">${esc(t.categoria||'Outros')}</span></td>
             <td style="white-space:nowrap;color:var(--text2)">${fmtDate(t.data)}</td>
             <td><span class="tx-badge ${t.tipo}">${t.tipo==='renda'?'↑ Renda':'↓ Gasto'}</span></td>
             <td style="text-align:right;font-weight:600;color:${t.tipo==='renda'?'var(--green)':'var(--red)'}">${fmt(t.valor)}</td>
+            <td><button class="tx-del" onclick="askDeleteTx('${t.id}')" title="Excluir"><i class="bi bi-trash3"></i></button></td>
         </tr>`).join('');
     }
 
@@ -569,7 +611,6 @@
         cBalance=new Chart(ctx,{type:'line',data:{labels:data.map(d=>d.dia),datasets:[{data:vals,borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.08)',fill:true,tension:.4,pointRadius:0,borderWidth:2}]},
             options:{responsive:true,maintainAspectRatio:false,scales:{x:{display:false},y:{display:false}},plugins:{legend:{display:false},tooltip:{enabled:false}}}});
     }
-
     function renderChartBar(ev){
         const ctx=$('chartBar').getContext('2d');
         if(cBar)cBar.destroy();
@@ -584,7 +625,6 @@
                 scales:{x:{ticks:{color:CC.text,font:{size:10}},grid:{display:false}},y:{ticks:{color:CC.text,callback:v=>v>=1000?(v/1000)+'k':v},grid:{color:CC.grid},border:{dash:[3,3]}}},
                 plugins:{legend:{labels:{color:CC.text,padding:10,font:{size:10},usePointStyle:true,pointStyle:'circle'}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmt(c.raw)}`}}}}});
     }
-
     function renderChartCat(cats){
         const ctx=$('chartCat').getContext('2d');
         if(cCat)cCat.destroy();
@@ -592,7 +632,6 @@
         cCat=new Chart(ctx,{type:'doughnut',data:{labels:cats.map(c=>c.nome),datasets:[{data:cats.map(c=>c.valor),backgroundColor:COLORS.slice(0,cats.length),borderWidth:0,hoverOffset:5}]},
             options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{color:CC.text,padding:6,font:{size:10},boxWidth:10}},tooltip:{callbacks:{label:c=>`${c.label}: ${fmt(c.raw)}`}}}}});
     }
-
     function renderChartDaily(daily){
         const ctx=$('chartDaily').getContext('2d');
         if(cDaily)cDaily.destroy();
@@ -609,7 +648,7 @@
     }
 
     /* ═══ INIT ═══ */
-    load();
+    OfflineDB.open().then(()=>load());
     if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}
     </script>
 </body>
