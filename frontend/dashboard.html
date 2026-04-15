@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0a0e1a">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
     *{margin:0;padding:0;box-sizing:border-box}
@@ -247,6 +247,14 @@
                     </div>
                 </div>
                 <div class="search-wrap"><i class="bi bi-search"></i><input type="text" id="searchInput" placeholder="Buscar…"></div>
+                <div style="position:relative;display:inline-block" id="txExportDropdown">
+                    <button class="icon-btn" id="btnExportTx" title="Exportar Transações"><i class="bi bi-download"></i></button>
+                    <div id="txExportMenu" style="display:none;position:absolute;top:100%;right:0;margin-top:.3rem;background:var(--card);border:1px solid var(--border);border-radius:8px;min-width:170px;z-index:10;box-shadow:0 8px 24px rgba(0,0,0,.3)">
+                        <button style="display:flex;align-items:center;gap:.4rem;width:100%;background:none;border:0;color:var(--text2);padding:.5rem .7rem;font-size:.78rem;cursor:pointer;text-align:left" id="btnTxCSV"><i class="bi bi-filetype-csv"></i> Exportar CSV</button>
+                        <button style="display:flex;align-items:center;gap:.4rem;width:100%;background:none;border:0;color:var(--text2);padding:.5rem .7rem;font-size:.78rem;cursor:pointer;text-align:left" id="btnTxJSON"><i class="bi bi-filetype-json"></i> Exportar JSON</button>
+                        <button style="display:flex;align-items:center;gap:.4rem;width:100%;background:none;border:0;color:var(--text2);padding:.5rem .7rem;font-size:.78rem;cursor:pointer;text-align:left" id="btnTxPrint"><i class="bi bi-printer"></i> Imprimir / PDF</button>
+                    </div>
+                </div>
                 <button class="icon-btn" id="btnNewTx" title="Nova Transação"><i class="bi bi-plus-lg"></i></button>
             </div>
         </header>
@@ -696,6 +704,69 @@
             scales:{x:{ticks:{color:CC.text,font:{size:9},maxTicksLimit:10},grid:{display:false}},y:{ticks:{color:CC.text,callback:v=>v>=1000?(v/1000)+'k':v},grid:{color:CC.grid},border:{dash:[3,3]}}},
             plugins:{legend:{labels:{color:CC.text,padding:10,font:{size:10},usePointStyle:true,pointStyle:'circle'}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmt(c.raw)}`}}}}});
     }
+
+    /* ═══ EXPORT TRANSACTIONS ═══ */
+    $('btnExportTx').onclick = () => {
+        const m = $('txExportMenu');
+        m.style.display = m.style.display === 'none' ? 'block' : 'none';
+    };
+    document.addEventListener('click', e => {
+        if (!$('txExportDropdown').contains(e.target)) $('txExportMenu').style.display = 'none';
+    });
+
+    $('btnTxCSV').onclick = () => {
+        if (!allTx || !allTx.length) { toast('Sem transações para exportar', 'warning'); return; }
+        let csv = '"Descrição","Categoria","Tipo","Valor","Data"\n';
+        allTx.forEach(t => {
+            csv += `"${(t.descricao||'').replace(/"/g,'""')}","${(t.categoria||'Outros').replace(/"/g,'""')}","${t.tipo}","${t.valor}","${(t.data||'').slice(0,10)}"\n`;
+        });
+        const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = 'transacoes_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
+        toast('CSV exportado!'); $('txExportMenu').style.display = 'none';
+    };
+
+    $('btnTxJSON').onclick = () => {
+        if (!allTx || !allTx.length) { toast('Sem transações para exportar', 'warning'); return; }
+        const data = { exportado_em: new Date().toISOString(), total: allTx.length, transacoes: allTx };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = 'transacoes_' + new Date().toISOString().slice(0, 10) + '.json'; a.click();
+        toast('JSON exportado!'); $('txExportMenu').style.display = 'none';
+    };
+
+    $('btnTxPrint').onclick = () => {
+        if (!allTx || !allTx.length) { toast('Sem transações para imprimir', 'warning'); return; }
+        let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Transações</title>
+        <style>body{font-family:Arial,sans-serif;padding:20px;color:#1a1a1a}h1{font-size:18px;margin-bottom:4px}
+        .meta{font-size:11px;color:#666;margin-bottom:16px}
+        table{width:100%;border-collapse:collapse;font-size:11px}
+        th{background:#f0f0f0;padding:6px 8px;text-align:left;border:1px solid #ddd;font-weight:600}
+        td{padding:5px 8px;border:1px solid #ddd}tr:nth-child(even){background:#fafafa}
+        .num{text-align:right;font-variant-numeric:tabular-nums}
+        .renda{color:#16a34a} .gasto{color:#dc2626}
+        .footer{margin-top:12px;font-size:10px;color:#999;text-align:right}
+        .totals{margin-top:8px;font-size:12px;display:flex;gap:20px}
+        </style></head><body><h1>Transações Financeiras</h1>
+        <div class="meta">Exportado em ${new Date().toLocaleString('pt-BR')} — ${allTx.length} registros</div>
+        <table><thead><tr><th>Descrição</th><th>Categoria</th><th>Data</th><th>Tipo</th><th style="text-align:right">Valor</th></tr></thead><tbody>`;
+        let totalR = 0, totalG = 0;
+        allTx.forEach(t => {
+            if (t.tipo === 'renda') totalR += t.valor; else totalG += t.valor;
+            html += `<tr><td>${esc(t.descricao)}</td><td>${esc(t.categoria||'Outros')}</td><td>${fmtDate(t.data)}</td>
+            <td>${t.tipo === 'renda' ? '↑ Renda' : '↓ Gasto'}</td>
+            <td class="num ${t.tipo}">${fmt(t.valor)}</td></tr>`;
+        });
+        html += `</tbody></table>
+        <div class="totals"><span>Total Rendas: <strong class="renda">${fmt(totalR)}</strong></span>
+        <span>Total Gastos: <strong class="gasto">${fmt(totalG)}</strong></span>
+        <span>Saldo: <strong>${fmt(totalR - totalG)}</strong></span></div>
+        <div class="footer">Dashboard Financeiro</div></body></html>`;
+        const win = window.open('', '_blank');
+        win.document.write(html); win.document.close();
+        win.onload = () => { win.print(); };
+        toast('Janela de impressão aberta'); $('txExportMenu').style.display = 'none';
+    };
 
     /* ═══ INIT ═══ */
     OfflineDB.open().then(()=>load());

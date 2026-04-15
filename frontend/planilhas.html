@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0a0e1a">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
     *{margin:0;padding:0;box-sizing:border-box}
@@ -228,13 +228,26 @@
                     </div>
                     <input class="editor-desc" id="editorDesc" placeholder="Descrição (opcional)" maxlength="500">
                     <div class="editor-tools" style="margin:.6rem 0">
+                        <button class="btn btn-secondary btn-sm" id="btnUndo" title="Desfazer (Ctrl+Z)"><i class="bi bi-arrow-counterclockwise"></i></button>
+                        <button class="btn btn-secondary btn-sm" id="btnRedo" title="Refazer (Ctrl+Y)"><i class="bi bi-arrow-clockwise"></i></button>
+                        <span style="border-left:1px solid var(--border);margin:0 .2rem"></span>
                         <button class="btn btn-secondary btn-sm" id="btnAddRow"><i class="bi bi-plus"></i> Linha</button>
                         <button class="btn btn-secondary btn-sm" id="btnAddCol"><i class="bi bi-plus"></i> Coluna</button>
                         <button class="btn btn-secondary btn-sm" id="btnDelRow"><i class="bi bi-dash"></i> Linha</button>
                         <button class="btn btn-secondary btn-sm" id="btnDelCol"><i class="bi bi-dash"></i> Coluna</button>
+                        <span style="border-left:1px solid var(--border);margin:0 .2rem"></span>
                         <button class="btn btn-secondary btn-sm" id="btnDuplicate"><i class="bi bi-copy"></i> Duplicar</button>
                         <button class="btn btn-secondary btn-sm" id="btnChart"><i class="bi bi-bar-chart"></i> Gráfico</button>
-                        <button class="btn btn-secondary btn-sm" id="btnExport"><i class="bi bi-download"></i> CSV</button>
+                        <span style="border-left:1px solid var(--border);margin:0 .2rem"></span>
+                        <div style="position:relative;display:inline-block" id="exportDropdown">
+                            <button class="btn btn-primary btn-sm" id="btnSaveAs"><i class="bi bi-save"></i> Salvar Como <i class="bi bi-caret-down-fill" style="font-size:.6rem"></i></button>
+                            <div id="exportMenu" style="display:none;position:absolute;top:100%;left:0;margin-top:.3rem;background:var(--card);border:1px solid var(--border);border-radius:8px;min-width:180px;z-index:10;box-shadow:0 8px 24px rgba(0,0,0,.3)">
+                                <button class="btn btn-secondary btn-sm" style="width:100%;justify-content:flex-start;border:0;border-radius:0;padding:.5rem .7rem" id="btnExportCSV"><i class="bi bi-filetype-csv"></i> Exportar CSV</button>
+                                <button class="btn btn-secondary btn-sm" style="width:100%;justify-content:flex-start;border:0;border-radius:0;padding:.5rem .7rem" id="btnExportJSON"><i class="bi bi-filetype-json"></i> Exportar JSON</button>
+                                <button class="btn btn-secondary btn-sm" style="width:100%;justify-content:flex-start;border:0;border-radius:0;padding:.5rem .7rem" id="btnExportXLS"><i class="bi bi-file-earmark-spreadsheet"></i> Exportar Excel (.xls)</button>
+                                <button class="btn btn-secondary btn-sm" style="width:100%;justify-content:flex-start;border:0;border-radius:0;padding:.5rem .7rem" id="btnPrint"><i class="bi bi-printer"></i> Imprimir / PDF</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="grid-wrap" id="gridWrap">
                         <table class="grid-table" id="gridTable"><thead></thead><tbody></tbody></table>
@@ -453,6 +466,7 @@
         if(!currentSheet.dados.columns) currentSheet.dados.columns = [];
         if(!currentSheet.dados.rows) currentSheet.dados.rows = [];
         sortCol = -1; sortDir = 'none'; filters = {};
+        undoStack.length = 0; redoStack.length = 0;
         if(miniChartInstance){miniChartInstance.destroy();miniChartInstance=null}
         $('miniChartWrap').classList.remove('show');
         $('editorTitle').value = currentSheet.nome || '';
@@ -590,7 +604,14 @@
         updateSums();
 
         // Events — cells
+        let cellUndoPushed = false;
         tbody.querySelectorAll('.grid-cell').forEach(cell => {
+            cell.onfocus = () => {
+                if (!cellUndoPushed) { pushUndo(); cellUndoPushed = true; }
+                const r = parseInt(cell.dataset.r), c = parseInt(cell.dataset.c);
+                const raw = currentSheet.dados.rows[r][c];
+                if (typeof raw === 'string' && raw.startsWith('=')) cell.value = raw;
+            };
             cell.oninput = () => {
                 const r = parseInt(cell.dataset.r), c = parseInt(cell.dataset.c);
                 let v = cell.value;
@@ -625,13 +646,8 @@
                     if (next) next.focus();
                 }
             };
-            // Show formula result on blur, raw formula on focus
-            cell.onfocus = () => {
-                const r = parseInt(cell.dataset.r), c = parseInt(cell.dataset.c);
-                const raw = currentSheet.dados.rows[r][c];
-                if (typeof raw === 'string' && raw.startsWith('=')) cell.value = raw;
-            };
             cell.onblur = () => {
+                cellUndoPushed = false;
                 const r = parseInt(cell.dataset.r), c = parseInt(cell.dataset.c);
                 const raw = currentSheet.dados.rows[r][c];
                 if (typeof raw === 'string' && raw.startsWith('=')) {
@@ -744,12 +760,14 @@
 
     /* ═══ ADD / REMOVE ROWS / COLS ═══ */
     $('btnAddRow').onclick = ()=>{
+        pushUndo();
         const ncols = currentSheet.dados.columns.length;
         currentSheet.dados.rows.push(new Array(ncols).fill(''));
         renderGrid();
         scheduleAutoSave();
     };
     $('btnAddCol').onclick = ()=>{
+        pushUndo();
         const num = currentSheet.dados.columns.length + 1;
         currentSheet.dados.columns.push({id:'c'+Date.now(), name:'Coluna '+num, type:'text'});
         currentSheet.dados.rows.forEach(r=>r.push(''));
@@ -758,12 +776,14 @@
     };
     $('btnDelRow').onclick = ()=>{
         if(currentSheet.dados.rows.length<=1) return;
+        pushUndo();
         currentSheet.dados.rows.pop();
         renderGrid();
         scheduleAutoSave();
     };
     $('btnDelCol').onclick = ()=>{
         if(currentSheet.dados.columns.length<=1) return;
+        pushUndo();
         currentSheet.dados.columns.pop();
         currentSheet.dados.rows.forEach(r=>r.pop());
         renderGrid();
@@ -846,8 +866,65 @@
         });
     }
 
+    /* ═══ UNDO / REDO ═══ */
+    const undoStack = [];
+    const redoStack = [];
+    const MAX_UNDO = 50;
+
+    function pushUndo() {
+        if (!currentSheet) return;
+        undoStack.push(JSON.stringify(currentSheet.dados));
+        if (undoStack.length > MAX_UNDO) undoStack.shift();
+        redoStack.length = 0; // clear redo on new action
+    }
+
+    function doUndo() {
+        if (!currentSheet || undoStack.length === 0) return;
+        redoStack.push(JSON.stringify(currentSheet.dados));
+        currentSheet.dados = JSON.parse(undoStack.pop());
+        renderGrid();
+        scheduleAutoSave();
+    }
+
+    function doRedo() {
+        if (!currentSheet || redoStack.length === 0) return;
+        undoStack.push(JSON.stringify(currentSheet.dados));
+        currentSheet.dados = JSON.parse(redoStack.pop());
+        renderGrid();
+        scheduleAutoSave();
+    }
+
+    $('btnUndo').onclick = doUndo;
+    $('btnRedo').onclick = doRedo;
+
+    /* ═══ KEYBOARD SHORTCUTS ═══ */
+    document.addEventListener('keydown', e => {
+        if (!currentSheet) return;
+        // Ctrl+Z = Undo
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); doUndo(); }
+        // Ctrl+Y or Ctrl+Shift+Z = Redo
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); doRedo(); }
+        // Ctrl+S = Force save
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveSheet(); }
+        // Ctrl+P = Print
+        if ((e.ctrlKey || e.metaKey) && e.key === 'p' && $('viewEditor').classList.contains('active')) { e.preventDefault(); printSheet(); }
+    });
+
+    /* ═══ EXPORT DROPDOWN ═══ */
+    $('btnSaveAs').onclick = () => {
+        const menu = $('exportMenu');
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    };
+    document.addEventListener('click', e => {
+        if (!$('exportDropdown').contains(e.target)) $('exportMenu').style.display = 'none';
+    });
+
+    function getFileName() {
+        return (currentSheet?.nome || 'planilha').replace(/[^a-zA-Z0-9À-ú ]/g, '_');
+    }
+
     /* ═══ EXPORT CSV ═══ */
-    $('btnExport').onclick = ()=>{
+    $('btnExportCSV').onclick = () => {
         const cols = currentSheet.dados.columns;
         const rows = currentSheet.dados.rows;
         let csv = cols.map(c=>'"'+c.name.replace(/"/g,'""')+'"').join(',')+'\n';
@@ -862,7 +939,100 @@
         a.click();
         URL.revokeObjectURL(url);
         toast('CSV exportado!');
+        $('exportMenu').style.display = 'none';
     };
+
+    /* ═══ EXPORT JSON ═══ */
+    $('btnExportJSON').onclick = () => {
+        const data = {
+            nome: currentSheet.nome,
+            descricao: currentSheet.descricao || '',
+            exportado_em: new Date().toISOString(),
+            dados: currentSheet.dados
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = getFileName() + '.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        toast('JSON exportado!');
+        $('exportMenu').style.display = 'none';
+    };
+
+    /* ═══ EXPORT XLS (Excel XML) ═══ */
+    $('btnExportXLS').onclick = () => {
+        const cols = currentSheet.dados.columns;
+        const rows = currentSheet.dados.rows;
+        let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+        xml += '<?mso-application progid="Excel.Sheet"?>\n';
+        xml += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n';
+        xml += '<Worksheet ss:Name="' + esc(currentSheet.nome || 'Planilha') + '"><Table>\n';
+        // Header row
+        xml += '<Row>';
+        cols.forEach(c => { xml += '<Cell><Data ss:Type="String">' + esc(c.name) + '</Data></Cell>'; });
+        xml += '</Row>\n';
+        // Data rows
+        rows.forEach(r => {
+            xml += '<Row>';
+            r.forEach((v, ci) => {
+                const type = cols[ci]?.type;
+                const isNum = (type === 'number' || type === 'currency') && !isNaN(parseFloat(v));
+                xml += '<Cell><Data ss:Type="' + (isNum ? 'Number' : 'String') + '">' + esc(String(v ?? '')) + '</Data></Cell>';
+            });
+            xml += '</Row>\n';
+        });
+        xml += '</Table></Worksheet></Workbook>';
+        const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = getFileName() + '.xls';
+        a.click();
+        URL.revokeObjectURL(url);
+        toast('Excel exportado!');
+        $('exportMenu').style.display = 'none';
+    };
+
+    /* ═══ PRINT / PDF ═══ */
+    $('btnPrint').onclick = () => { printSheet(); $('exportMenu').style.display = 'none'; };
+
+    function printSheet() {
+        if (!currentSheet) return;
+        const cols = currentSheet.dados.columns;
+        const rows = currentSheet.dados.rows;
+        let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(currentSheet.nome)}</title>
+        <style>
+            body{font-family:Arial,sans-serif;padding:20px;color:#1a1a1a}
+            h1{font-size:18px;margin-bottom:4px} h2{font-size:12px;color:#666;margin-bottom:16px;font-weight:normal}
+            table{width:100%;border-collapse:collapse;font-size:12px}
+            th{background:#f0f0f0;padding:6px 8px;text-align:left;border:1px solid #ddd;font-weight:600}
+            td{padding:5px 8px;border:1px solid #ddd}
+            tr:nth-child(even){background:#fafafa}
+            .num{text-align:right;font-variant-numeric:tabular-nums}
+            .footer{margin-top:12px;font-size:10px;color:#999;text-align:right}
+        </style></head><body>
+        <h1>${esc(currentSheet.nome)}</h1>
+        <h2>${esc(currentSheet.descricao || '')}</h2>
+        <table><thead><tr>`;
+        cols.forEach(c => { html += `<th>${esc(c.name)}</th>`; });
+        html += '</tr></thead><tbody>';
+        rows.forEach(r => {
+            html += '<tr>';
+            r.forEach((v, ci) => {
+                const cls = (cols[ci]?.type === 'number' || cols[ci]?.type === 'currency') ? ' class="num"' : '';
+                html += `<td${cls}>${esc(String(v ?? ''))}</td>`;
+            });
+            html += '</tr>';
+        });
+        html += `</tbody></table><div class="footer">Exportado em ${new Date().toLocaleString('pt-BR')}</div></body></html>`;
+        const win = window.open('', '_blank');
+        win.document.write(html);
+        win.document.close();
+        win.onload = () => { win.print(); };
+        toast('Janela de impressão aberta');
+    }
 
     /* ═══ DUPLICATE CURRENT SHEET ═══ */
     $('btnDuplicate').onclick = async () => {
