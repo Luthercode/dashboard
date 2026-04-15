@@ -127,9 +127,11 @@ const SyncEngine = {
     listeners: [],
     pendingCount: 0,
 
+    retryTimer: null,
+
     init() {
         window.addEventListener('online', () => { this.online = true; this.notify(); this.processQueue(); });
-        window.addEventListener('offline', () => { this.online = false; this.notify(); });
+        window.addEventListener('offline', () => { this.online = false; this.notify(); if(this.retryTimer){clearTimeout(this.retryTimer);this.retryTimer=null;} });
         // Listen for SW sync message
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.addEventListener('message', e => {
@@ -137,6 +139,8 @@ const SyncEngine = {
             });
         }
         this.updateCount();
+        // Tentar sync ao iniciar (caso haja pendentes de sessão anterior)
+        if (this.online) setTimeout(() => this.processQueue(), 2000);
     },
 
     onChange(fn) { this.listeners.push(fn); },
@@ -195,11 +199,17 @@ const SyncEngine = {
                 }
             } catch (e) {
                 console.log('Sync failed for item:', item.qid, e);
-                break; // Stop on first failure, retry later
+                break; // Stop on first failure, retry below
             }
         }
 
         this.syncing = false;
         await this.updateCount();
+
+        // Retry automático se ainda houver pendentes
+        if (this.pendingCount > 0 && this.online) {
+            if (this.retryTimer) clearTimeout(this.retryTimer);
+            this.retryTimer = setTimeout(() => { this.retryTimer = null; this.processQueue(); }, 10000);
+        }
     }
 };

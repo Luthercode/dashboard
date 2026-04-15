@@ -567,6 +567,8 @@
     async function load(){
         try{
             if(navigator.onLine){
+                // Processar fila de sync ANTES de buscar do servidor
+                await SyncEngine.processQueue();
                 const p=periodo!=='all'?`?periodo=${periodo}`:'';
                 const[s,tx]=await Promise.all([api('/summary'+p),api('/transactions'+p)]);
                 summary=s;allTx=tx;

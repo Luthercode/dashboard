@@ -463,6 +463,8 @@
     async function loadSheets(){
         try{
             if(navigator.onLine){
+                // Processar fila de sync ANTES de buscar do servidor
+                await SyncEngine.processQueue();
                 sheets = await api('/spreadsheets');
                 await OfflineDB.putAll('spreadsheets', sheets);
             } else {
@@ -845,7 +847,11 @@
             }
             setAutoSaveStatus('saved');
         }catch(err){
+            // Falhou online — salvar local + enfileirar sync
             await OfflineDB.put('spreadsheets', {...currentSheet, ...body, updated_at:new Date().toISOString()});
+            if(!currentSheet.id.startsWith('local_')){
+                await SyncEngine.queueAction({type:'update', store:'spreadsheets', endpoint:'/spreadsheets/'+currentSheet.id, data:body});
+            }
             setAutoSaveStatus('saved');
         }
     }
