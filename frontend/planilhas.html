@@ -232,7 +232,7 @@
                 <div>
                     <h2 style="font-size:.9rem;color:var(--text2);font-weight:600;margin-bottom:.5rem"><i class="bi bi-folder" style="color:var(--primary)"></i> Minhas Planilhas</h2>
                     <div class="sheets-grid" id="sheetsGrid">
-                        <div class="empty" id="emptySheets"><i class="bi bi-table"></i>Nenhuma planilha ainda<p>Use um template ou crie do zero</p></div>
+                        <div class="empty"><i class="bi bi-table"></i>Nenhuma planilha ainda<p>Use um template ou crie do zero</p></div>
                     </div>
                 </div>
             </div>
@@ -475,7 +475,6 @@
 
     function renderSheets(){
         const g = $('sheetsGrid');
-        const em = $('emptySheets');
         let filtered = sheets;
         if (searchQuery) {
             filtered = sheets.filter(s =>
@@ -483,8 +482,11 @@
                 (s.descricao||'').toLowerCase().includes(searchQuery)
             );
         }
-        if(!filtered.length){g.innerHTML='';em.style.display='';if(searchQuery){em.innerHTML='<i class="bi bi-search"></i>Nenhuma planilha encontrada<p>Tente outro termo de busca</p>'}else{em.innerHTML='<i class="bi bi-table"></i>Nenhuma planilha ainda<p>Use um template ou crie do zero</p>'}g.appendChild(em);return}
-        em.style.display='none';
+        if(!filtered.length){
+            if(searchQuery){g.innerHTML='<div class="empty"><i class="bi bi-search"></i>Nenhuma planilha encontrada<p>Tente outro termo de busca</p></div>'}
+            else{g.innerHTML='<div class="empty"><i class="bi bi-table"></i>Nenhuma planilha ainda<p>Use um template ou crie do zero</p></div>'}
+            return;
+        }
         g.innerHTML = filtered.map(s=>`
             <div class="sheet-card" onclick="openSheetById('${s.id}')">
                 <div class="sheet-actions">
