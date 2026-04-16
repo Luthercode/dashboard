@@ -297,6 +297,177 @@ def get_summary(
         "categorias_renda": [{"nome": k, "valor": v} for k, v in top_cat_renda],
     }
 
+# ── Endpoint de Resumo Mensal ─────────────────────────────────────────────────
+
+@app.get("/summary/monthly")
+def get_monthly_summary(
+    user_id: str = Depends(get_current_user_id),
+    mes: Optional[str] = Query(None, pattern=r"^\d{4}-\d{2}$"),
+):
+    """Retorna resumo detalhado de um mês específico com comparação ao mês anterior."""
+    hoje = datetime.now().date()
+    if mes:
+        ano, m = mes.split("-")
+        target_year, target_month = int(ano), int(m)
+    else:
+        target_year, target_month = hoje.year, hoje.month
+
+    # Mês atual
+    inicio_mes = f"{target_year}-{target_month:02d}-01"
+    if target_month == 12:
+        inicio_prox = f"{target_year + 1}-01-01"
+    else:
+        inicio_prox = f"{target_year}-{target_month + 1:02d}-01"
+
+    # Mês anterior
+    if target_month == 1:
+        prev_year, prev_month = target_year - 1, 12
+    else:
+        prev_year, prev_month = target_year, target_month - 1
+    inicio_ant = f"{prev_year}-{prev_month:02d}-01"
+
+    # Buscar transações do mês atual e anterior
+    res_atual = (
+        supabase.table("transactions")
+        .select("tipo, valor, data, categoria, descricao")
+        .eq("user_id", user_id)
+        .gte("data", inicio_ant)
+        .lt("data", inicio_prox)
+        .execute()
+    )
+
+    tx_mes = [t for t in res_atual.data if t["data"][:7] == f"{target_year}-{target_month:02d}"]
+    tx_ant = [t for t in res_atual.data if t["data"][:7] == f"{prev_year}-{prev_month:02d}"]
+
+    def calc(txs):
+        renda, gasto = 0.0, 0.0
+        cats_g, cats_r = {}, {}
+        daily = {}
+        for t in txs:
+            dia = t["data"][:10]
+            cat = t.get("categoria") or "Outros"
+            if dia not in daily:
+                daily[dia] = {"renda": 0.0, "gasto": 0.0}
+            if t["tipo"] == "renda":
+                renda += t["valor"]
+                daily[dia]["renda"] += t["valor"]
+                cats_r[cat] = cats_r.get(cat, 0.0) + t["valor"]
+            else:
+                gasto += t["valor"]
+                daily[dia]["gasto"] += t["valor"]
+                cats_g[cat] = cats_g.get(cat, 0.0) + t["valor"]
+        return {
+            "total_renda": renda,
+            "total_gasto": gasto,
+            "saldo": renda - gasto,
+            "num_transacoes": len(txs),
+            "taxa_economia": round((renda - gasto) / renda * 100, 1) if renda > 0 else 0,
+            "categorias_gasto": sorted(cats_g.items(), key=lambda x: x[1], reverse=True),
+            "categorias_renda": sorted(cats_r.items(), key=lambda x: x[1], reverse=True),
+            "diario": [{"dia": k, **v} for k, v in sorted(daily.items())],
+        }
+
+    atual = calc(tx_mes)
+    anterior = calc(tx_ant)
+
+    # Comparações
+    var_renda = ((atual["total_renda"] - anterior["total_renda"]) / anterior["total_renda"] * 100) if anterior["total_renda"] > 0 else 0
+    var_gasto = ((atual["total_gasto"] - anterior["total_gasto"]) / anterior["total_gasto"] * 100) if anterior["total_gasto"] > 0 else 0
+
+    # Maior gasto e renda do mês
+    maior_gasto = max(tx_mes, key=lambda t: t["valor"] if t["tipo"] == "gasto" else 0, default=None)
+    maior_renda = max(tx_mes, key=lambda t: t["valor"] if t["tipo"] == "renda" else 0, default=None)
+
+    # Média diária
+    dias_com_gasto = len([d for d in atual["diario"] if d["gasto"] > 0])
+    media_diaria = atual["total_gasto"] / dias_com_gasto if dias_com_gasto > 0 else 0
+
+    # Score financeiro (0-100)
+    score = 50
+    if atual["taxa_economia"] >= 30:
+        score += 25
+    elif atual["taxa_economia"] >= 15:
+        score += 15
+    elif atual["taxa_economia"] >= 5:
+        score += 5
+    elif atual["taxa_economia"] < 0:
+        score -= 20
+
+    if var_gasto < 0:
+        score += 10  # gastou menos que mês anterior
+    elif var_gasto > 20:
+        score -= 10
+
+    if var_renda > 0:
+        score += 10
+    elif var_renda < -10:
+        score -= 5
+
+    num_cats = len(atual["categorias_gasto"])
+    if num_cats >= 3:
+        score += 5  # diversificação de gastos
+
+    score = max(0, min(100, score))
+
+    MESES_PT = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
+
+    return {
+        "mes": f"{target_year}-{target_month:02d}",
+        "mes_nome": MESES_PT[target_month - 1] + f" {target_year}",
+        "atual": {
+            "total_renda": atual["total_renda"],
+            "total_gasto": atual["total_gasto"],
+            "saldo": atual["saldo"],
+            "num_transacoes": atual["num_transacoes"],
+            "taxa_economia": atual["taxa_economia"],
+            "media_diaria_gasto": round(media_diaria, 2),
+            "categorias_gasto": [{"nome": k, "valor": v} for k, v in atual["categorias_gasto"]],
+            "categorias_renda": [{"nome": k, "valor": v} for k, v in atual["categorias_renda"]],
+            "diario": atual["diario"],
+        },
+        "anterior": {
+            "total_renda": anterior["total_renda"],
+            "total_gasto": anterior["total_gasto"],
+            "saldo": anterior["saldo"],
+            "num_transacoes": anterior["num_transacoes"],
+        },
+        "comparacao": {
+            "var_renda_pct": round(var_renda, 1),
+            "var_gasto_pct": round(var_gasto, 1),
+            "var_saldo": round(atual["saldo"] - anterior["saldo"], 2),
+        },
+        "maior_gasto": {"valor": maior_gasto["valor"], "descricao": maior_gasto.get("descricao", "")} if maior_gasto and maior_gasto["tipo"] == "gasto" else None,
+        "maior_renda": {"valor": maior_renda["valor"], "descricao": maior_renda.get("descricao", "")} if maior_renda and maior_renda["tipo"] == "renda" else None,
+        "score_financeiro": score,
+        "dicas": _gerar_dicas(atual, anterior, var_gasto, var_renda),
+    }
+
+
+def _gerar_dicas(atual, anterior, var_gasto, var_renda):
+    """Gera dicas financeiras personalizadas baseadas nos dados."""
+    dicas = []
+    if atual["taxa_economia"] < 10:
+        dicas.append("⚠️ Sua taxa de economia está baixa. Tente guardar pelo menos 15% da renda.")
+    if atual["taxa_economia"] >= 30:
+        dicas.append("🎉 Excelente! Você está economizando mais de 30% da renda!")
+    if var_gasto > 20:
+        dicas.append("📈 Seus gastos aumentaram mais de 20% em relação ao mês anterior. Revise suas despesas.")
+    if var_gasto < -10:
+        dicas.append("👏 Parabéns! Você reduziu seus gastos em relação ao mês passado.")
+    if var_renda > 0:
+        dicas.append("💰 Sua renda aumentou! Considere investir o excedente.")
+    if len(atual["categorias_gasto"]) > 0:
+        top_cat = atual["categorias_gasto"][0]
+        pct = (top_cat[1] / atual["total_gasto"] * 100) if atual["total_gasto"] > 0 else 0
+        if pct > 40:
+            dicas.append(f"🔍 A categoria '{top_cat[0]}' corresponde a {pct:.0f}% dos seus gastos. Avalie se pode reduzir.")
+    if atual["saldo"] < 0:
+        dicas.append("🚨 Saldo negativo! Você gastou mais do que recebeu neste mês.")
+    if not dicas:
+        dicas.append("✅ Suas finanças estão equilibradas. Continue assim!")
+    return dicas
+
+
 # ── Endpoints de Layout ─────────────────────────────────────────────────────
 
 DEFAULT_LAYOUT = {

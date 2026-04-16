@@ -197,6 +197,30 @@
         .card-row.c4{grid-template-columns:1fr}
         .topbar-right .search-wrap{display:none}
     }
+
+    /* ── NOTIFICATION STYLES ── */
+    .notif-dot{position:absolute;top:2px;right:2px;width:8px;height:8px;background:var(--red);border-radius:50%;border:1.5px solid var(--card)}
+    .notif-toggle{display:flex;align-items:center;gap:.5rem;cursor:pointer;padding:.35rem .5rem;border-radius:8px;transition:background .15s}
+    .notif-toggle:hover{background:var(--card2)}
+    .notif-toggle input{display:none}
+    .notif-switch{width:34px;height:18px;background:var(--border2);border-radius:9px;position:relative;transition:background .2s;flex-shrink:0}
+    .notif-switch::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;background:#fff;border-radius:50%;transition:transform .2s}
+    .notif-toggle input:checked+.notif-switch{background:var(--primary)}
+    .notif-toggle input:checked+.notif-switch::after{transform:translateX(16px)}
+    .notif-label{font-size:.78rem;color:var(--text)}
+    .notif-item{display:flex;gap:.5rem;padding:.4rem .5rem;border-radius:8px;transition:background .15s;border-bottom:1px solid var(--border)}
+    .notif-item:hover{background:var(--card2)}
+    .notif-item .ni-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0}
+    .notif-item .ni-body{flex:1;min-width:0}
+    .notif-item .ni-title{font-size:.78rem;font-weight:600}
+    .notif-item .ni-desc{font-size:.68rem;color:var(--text2)}
+    .notif-item .ni-time{font-size:.62rem;color:var(--text3)}
+    .score-low{color:var(--red)}.score-mid{color:var(--amber)}.score-high{color:var(--green)}.score-great{color:var(--primary)}
+    .dica-card{background:var(--card2);border-radius:8px;padding:.5rem .65rem;font-size:.75rem;line-height:1.4;margin-bottom:.3rem}
+    .cat-bar{display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem}
+    .cat-bar-fill{height:6px;border-radius:3px;transition:width .3s}
+    .cat-bar-label{font-size:.72rem;color:var(--text2);min-width:80px}
+    .cat-bar-val{font-size:.72rem;font-weight:600;white-space:nowrap}
     </style>
 </head>
 <body>
@@ -217,6 +241,8 @@
             <a href="#" id="navCharts"><i class="bi bi-bar-chart-line"></i> Gráficos</a>
             <div class="divider"></div>
             <a href="planilhas.html" id="navPlanilhas"><i class="bi bi-table"></i> Planilhas</a>
+            <a href="#" id="navMonthly"><i class="bi bi-calendar-check"></i> Resumo Mensal</a>
+            <a href="#" id="navNotifSettings"><i class="bi bi-bell"></i> Notificações</a>
             <div class="divider"></div>
             <a href="#" id="navLogout"><i class="bi bi-box-arrow-left"></i> Sair</a>
         </nav>
@@ -255,6 +281,8 @@
                         <button style="display:flex;align-items:center;gap:.4rem;width:100%;background:none;border:0;color:var(--text2);padding:.5rem .7rem;font-size:.78rem;cursor:pointer;text-align:left" id="btnTxPrint"><i class="bi bi-printer"></i> Imprimir / PDF</button>
                     </div>
                 </div>
+                <button class="icon-btn" id="btnNotif" title="Notificações" style="position:relative"><i class="bi bi-bell"></i><span class="notif-dot" id="notifDot" style="display:none"></span></button>
+                <button class="icon-btn" id="btnMonthly" title="Resumo do Mês"><i class="bi bi-calendar-check"></i></button>
                 <button class="icon-btn" id="btnNewTx" title="Nova Transação"><i class="bi bi-plus-lg"></i></button>
             </div>
         </header>
@@ -284,6 +312,15 @@
                 <div class="card"><div style="display:flex;justify-content:space-between;align-items:start"><div><div class="card-label"><i class="bi bi-calendar-day"></i> Média/Dia</div><div class="card-value" style="color:var(--amber)" id="mediaVal">—</div><div class="card-sub muted">gasto diário</div></div><div class="card-icon ic-amber"><i class="bi bi-calendar-day"></i></div></div></div>
                 <div class="card"><div style="display:flex;justify-content:space-between;align-items:start"><div><div class="card-label"><i class="bi bi-exclamation-triangle"></i> Maior Gasto</div><div class="card-value" style="color:var(--red);font-size:1.2rem" id="maiorGVal">—</div><div class="card-sub muted" id="maiorGDesc"></div></div><div class="card-icon ic-red"><i class="bi bi-exclamation-triangle"></i></div></div></div>
                 <div class="card"><div style="display:flex;justify-content:space-between;align-items:start"><div><div class="card-label"><i class="bi bi-trophy"></i> Maior Renda</div><div class="card-value" style="color:var(--green);font-size:1.2rem" id="maiorRVal">—</div><div class="card-sub muted" id="maiorRDesc"></div></div><div class="card-icon ic-green"><i class="bi bi-trophy"></i></div></div></div>
+            </div>
+
+            <!-- Financial Insights Card -->
+            <div class="card" id="insightsCard" style="background:linear-gradient(135deg,var(--card) 0%,#1a1f35 100%);display:none">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+                    <div class="card-label" style="margin:0"><i class="bi bi-lightbulb" style="color:var(--amber)"></i> Insights Financeiros</div>
+                    <button class="icon-btn" id="btnCloseInsights" style="width:24px;height:24px;font-size:.7rem;border:none"><i class="bi bi-x"></i></button>
+                </div>
+                <div id="insightsContent" style="display:flex;gap:.6rem;overflow-x:auto;padding-bottom:.3rem"></div>
             </div>
 
             <div class="card-row c2-1" id="chartSection">
@@ -356,6 +393,87 @@
     </div>
 
     <div class="toast" id="toast"></div>
+
+    <!-- MODAL: Resumo Mensal -->
+    <div class="modal-overlay" id="monthlyModal">
+        <div class="modal-box" style="max-width:600px;max-height:90vh;overflow-y:auto">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+                <h3 style="margin:0"><i class="bi bi-calendar-check" style="color:var(--primary)"></i> Resumo do Mês</h3>
+                <div style="display:flex;align-items:center;gap:.5rem">
+                    <button class="icon-btn" id="monthPrev" title="Mês anterior" style="width:28px;height:28px"><i class="bi bi-chevron-left"></i></button>
+                    <span id="monthlyTitle" style="font-weight:600;font-size:.85rem;min-width:120px;text-align:center">—</span>
+                    <button class="icon-btn" id="monthNext" title="Próximo mês" style="width:28px;height:28px"><i class="bi bi-chevron-right"></i></button>
+                    <button class="btn-close-modal" id="monthlyClose"><i class="bi bi-x-lg"></i></button>
+                </div>
+            </div>
+            <!-- Score -->
+            <div id="scoreSection" style="text-align:center;padding:.5rem 0">
+                <div style="font-size:.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:.3rem">Score Financeiro</div>
+                <div style="position:relative;display:inline-block;width:80px;height:80px">
+                    <svg viewBox="0 0 36 36" style="width:80px;height:80px;transform:rotate(-90deg)">
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--border)" stroke-width="3"/>
+                        <path id="scoreArc" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--primary)" stroke-width="3" stroke-dasharray="0, 100" stroke-linecap="round"/>
+                    </svg>
+                    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:1.3rem;font-weight:700" id="scoreVal">—</div>
+                </div>
+            </div>
+            <!-- Cards -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:.5rem 0">
+                <div class="card" style="padding:.6rem"><div class="card-label"><i class="bi bi-arrow-up-short" style="color:var(--green)"></i> Renda</div><div style="font-size:1.1rem;font-weight:700;color:var(--green)" id="mRenda">—</div><div class="card-sub" id="mRendaVar" style="font-size:.65rem"></div></div>
+                <div class="card" style="padding:.6rem"><div class="card-label"><i class="bi bi-arrow-down-short" style="color:var(--red)"></i> Gastos</div><div style="font-size:1.1rem;font-weight:700;color:var(--red)" id="mGasto">—</div><div class="card-sub" id="mGastoVar" style="font-size:.65rem"></div></div>
+                <div class="card" style="padding:.6rem"><div class="card-label"><i class="bi bi-wallet2" style="color:var(--primary)"></i> Saldo</div><div style="font-size:1.1rem;font-weight:700" id="mSaldo">—</div></div>
+                <div class="card" style="padding:.6rem"><div class="card-label"><i class="bi bi-piggy-bank" style="color:var(--cyan)"></i> Economia</div><div style="font-size:1.1rem;font-weight:700;color:var(--cyan)" id="mEconomia">—</div></div>
+            </div>
+            <!-- Dicas -->
+            <div id="mDicas" style="margin:.5rem 0"></div>
+            <!-- Chart mini -->
+            <div class="card" style="padding:.6rem;margin:.5rem 0"><div style="font-size:.75rem;font-weight:600;margin-bottom:.3rem">Gastos diários do mês</div><div style="height:120px"><canvas id="chartMonthly"></canvas></div></div>
+            <!-- Top categorias -->
+            <div id="mTopCats" style="margin:.5rem 0"></div>
+        </div>
+    </div>
+
+    <!-- MODAL: Notificações -->
+    <div class="modal-overlay" id="notifModal">
+        <div class="modal-box" style="max-width:480px;max-height:85vh;overflow-y:auto">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+                <h3 style="margin:0"><i class="bi bi-bell" style="color:var(--amber)"></i> Notificações</h3>
+                <button class="btn-close-modal" id="notifClose"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <!-- Permissão -->
+            <div id="notifPermBlock" style="background:var(--card2);border-radius:var(--radius-sm);padding:.75rem;margin-bottom:.75rem">
+                <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem">
+                    <i class="bi bi-shield-check" style="color:var(--primary);font-size:1rem"></i>
+                    <span style="font-weight:600;font-size:.85rem">Permissão de Notificações</span>
+                </div>
+                <p style="font-size:.75rem;color:var(--text2);margin-bottom:.5rem">Ative para receber lembretes de fim de mês, alertas de gastos e mais.</p>
+                <button class="btn-submit" id="btnEnableNotif" style="padding:.35rem .8rem;font-size:.78rem">Ativar Notificações</button>
+                <span id="notifStatus" style="font-size:.72rem;color:var(--green);margin-left:.5rem;display:none"><i class="bi bi-check-circle"></i> Ativadas</span>
+            </div>
+            <!-- Configurações -->
+            <div style="font-size:.8rem;font-weight:600;margin-bottom:.4rem">Lembretes</div>
+            <div style="display:flex;flex-direction:column;gap:.4rem;margin-bottom:.75rem">
+                <label class="notif-toggle"><input type="checkbox" id="notifResumoMes" checked><span class="notif-switch"></span><span class="notif-label">📊 Resumo do mês (dia 28)</span></label>
+                <label class="notif-toggle"><input type="checkbox" id="notifAlertaGasto" checked><span class="notif-switch"></span><span class="notif-label">⚠️ Alerta quando gastar muito</span></label>
+                <label class="notif-toggle"><input type="checkbox" id="notifLembreteDiario"><span class="notif-switch"></span><span class="notif-label">📝 Lembrete diário (registrar gastos)</span></label>
+                <label class="notif-toggle"><input type="checkbox" id="notifMetaEconomia"><span class="notif-switch"></span><span class="notif-label">🎯 Meta de economia mensal</span></label>
+            </div>
+            <!-- Meta de economia -->
+            <div id="metaEcoBlock" style="background:var(--card2);border-radius:var(--radius-sm);padding:.6rem;margin-bottom:.75rem;display:none">
+                <div style="font-size:.75rem;font-weight:600;margin-bottom:.3rem">🎯 Meta de economia mensal</div>
+                <div style="display:flex;align-items:center;gap:.4rem">
+                    <span style="font-size:.75rem;color:var(--text2)">R$</span>
+                    <input type="number" id="metaEcoVal" class="form-input" style="width:120px;font-size:.8rem;padding:.3rem .5rem" placeholder="500" min="0" step="50">
+                    <button class="icon-btn" id="btnSaveMeta" title="Salvar meta" style="background:var(--primary);color:#fff;border:none;font-size:.75rem"><i class="bi bi-check-lg"></i></button>
+                </div>
+            </div>
+            <!-- Histórico de notificações -->
+            <div style="font-size:.8rem;font-weight:600;margin-bottom:.4rem">Histórico recente</div>
+            <div id="notifHistory" style="max-height:200px;overflow-y:auto">
+                <div style="text-align:center;padding:1rem;color:var(--text3);font-size:.75rem"><i class="bi bi-bell-slash"></i> Nenhuma notificação</div>
+            </div>
+        </div>
+    </div>
 
     <script src="config.js"></script>
     <script src="db.js"></script>
@@ -583,6 +701,8 @@
             }
             renderSummary(summary);renderTx(allTx);
             renderChartBalance(summary.evolucao_diaria);renderChartBar(summary.evolucao);renderChartCat(summary.categorias_gasto);renderChartDaily(summary.evolucao_diaria);
+            // Check notification alerts after data loaded
+            if(typeof NotifSystem!=='undefined'){NotifSystem.checkSpendingAlert();NotifSystem.checkSavingsGoal();}
         }catch(err){
             // Network error — try offline data
             try{
@@ -647,7 +767,44 @@
         const mr=d.maior_renda;
         if(mr){$('maiorRVal').textContent=fmt(mr.valor);$('maiorRDesc').textContent=mr.descricao||''}
         else{$('maiorRVal').textContent='—';$('maiorRDesc').textContent=''}
+        // Render insights
+        renderInsights(d);
     }
+
+    /* ═══ INSIGHTS ═══ */
+    function renderInsights(d){
+        if(!d || (!d.total_renda && !d.total_gasto)){$('insightsCard').style.display='none';return}
+        const insights=[];
+        // Taxa de economia
+        const taxaEco = d.total_renda>0 ? Math.round((d.saldo/d.total_renda)*100) : 0;
+        const ecoColor = taxaEco>=20?'var(--green)':taxaEco>=0?'var(--amber)':'var(--red)';
+        insights.push(`<div style="min-width:130px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.55rem .65rem;flex-shrink:0"><div style="font-size:.65rem;color:var(--text3);margin-bottom:.2rem">💰 Taxa de Economia</div><div style="font-size:1.3rem;font-weight:700;color:${ecoColor}">${taxaEco}%</div><div style="font-size:.62rem;color:var(--text3)">${taxaEco>=20?'Ótimo!':taxaEco>=0?'Pode melhorar':'Negativo!'}</div></div>`);
+        // Previsão fim do mês
+        const hoje=new Date(), diaAtual=hoje.getDate(), diasMes=new Date(hoje.getFullYear(),hoje.getMonth()+1,0).getDate();
+        if(diaAtual>1 && d.total_gasto>0){
+            const previsaoGasto=Math.round(d.total_gasto/diaAtual*diasMes);
+            insights.push(`<div style="min-width:130px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.55rem .65rem;flex-shrink:0"><div style="font-size:.65rem;color:var(--text3);margin-bottom:.2rem">📈 Previsão do Mês</div><div style="font-size:1rem;font-weight:700;color:var(--amber)">${fmt(previsaoGasto)}</div><div style="font-size:.62rem;color:var(--text3)">gasto previsto</div></div>`);
+        }
+        // Top categoria
+        if(d.categorias_gasto&&d.categorias_gasto.length){
+            const top=d.categorias_gasto[0];
+            const pct=d.total_gasto>0?Math.round(top.valor/d.total_gasto*100):0;
+            insights.push(`<div style="min-width:130px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.55rem .65rem;flex-shrink:0"><div style="font-size:.65rem;color:var(--text3);margin-bottom:.2rem">🏷️ Maior Categoria</div><div style="font-size:.95rem;font-weight:700">${esc(top.nome)}</div><div style="font-size:.62rem;color:var(--text3)">${pct}% dos gastos</div></div>`);
+        }
+        // Dias restantes
+        const diasRest=diasMes-diaAtual;
+        if(diasRest>0 && d.total_renda>0){
+            const disponivel=d.saldo;
+            const porDia=disponivel>0?disponivel/diasRest:0;
+            insights.push(`<div style="min-width:130px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.55rem .65rem;flex-shrink:0"><div style="font-size:.65rem;color:var(--text3);margin-bottom:.2rem">📅 Disponível/Dia</div><div style="font-size:1rem;font-weight:700;color:${porDia>0?'var(--green)':'var(--red)'}">${fmt(porDia)}</div><div style="font-size:.62rem;color:var(--text3)">${diasRest} dias restantes</div></div>`);
+        }
+        if(insights.length){
+            $('insightsCard').style.display='';
+            $('insightsContent').innerHTML=insights.join('');
+        }
+    }
+    $('btnCloseInsights').onclick=()=>{$('insightsCard').style.display='none'};
+
 
     /* ═══ RENDER TABLE ═══ */
     function renderTx(list){
@@ -780,6 +937,326 @@
     /* ═══ INIT ═══ */
     OfflineDB.open().then(()=>load());
     if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+
+    /* ═══ NOTIFICATION SYSTEM ═══ */
+    const NotifSystem = {
+        prefs: JSON.parse(localStorage.getItem('notif_prefs') || '{"resumoMes":true,"alertaGasto":true,"lembreteDiario":false,"metaEconomia":false,"metaValor":500}'),
+        history: JSON.parse(localStorage.getItem('notif_history') || '[]'),
+
+        save(){ localStorage.setItem('notif_prefs', JSON.stringify(this.prefs)); },
+        saveHistory(){ localStorage.setItem('notif_history', JSON.stringify(this.history.slice(0,20))); },
+
+        addHistory(title, desc, icon='bi-bell'){
+            this.history.unshift({title, desc, icon, time: Date.now()});
+            this.saveHistory();
+            this.renderHistory();
+        },
+
+        async requestPermission(){
+            if(!('Notification' in window)){toast('Seu navegador não suporta notificações','warning');return false}
+            const result = await Notification.requestPermission();
+            this.updatePermUI();
+            if(result==='granted'){
+                toast('Notificações ativadas!');
+                this.addHistory('Notificações ativadas','Você receberá lembretes e alertas','bi-check-circle');
+                return true;
+            } else {
+                toast('Permissão negada','warning');return false;
+            }
+        },
+
+        updatePermUI(){
+            const granted = 'Notification' in window && Notification.permission === 'granted';
+            $('btnEnableNotif').style.display = granted ? 'none' : '';
+            $('notifStatus').style.display = granted ? 'inline' : 'none';
+        },
+
+        async sendNotification(title, body, tag='default'){
+            if(!('Notification' in window) || Notification.permission !== 'granted') return;
+            // Use ServiceWorker showNotification for mobile compatibility
+            if('serviceWorker' in navigator && navigator.serviceWorker.controller){
+                const reg = await navigator.serviceWorker.ready;
+                await reg.showNotification(title, {
+                    body, icon: 'icons/icon-192.svg', badge: 'icons/icon-192.svg',
+                    tag, vibrate: [200,100,200], data: {url: 'dashboard.html'}
+                });
+            } else {
+                new Notification(title, {body, icon:'icons/icon-192.svg', tag});
+            }
+            this.addHistory(title, body, 'bi-bell-fill');
+        },
+
+        renderHistory(){
+            const c = $('notifHistory');
+            if(!this.history.length){
+                c.innerHTML='<div style="text-align:center;padding:1rem;color:var(--text3);font-size:.75rem"><i class="bi bi-bell-slash"></i> Nenhuma notificação</div>';
+                $('notifDot').style.display='none';
+                return;
+            }
+            c.innerHTML=this.history.map(n=>{
+                const ago=this.timeAgo(n.time);
+                return `<div class="notif-item"><div class="ni-icon ic-purple"><i class="bi ${n.icon}"></i></div><div class="ni-body"><div class="ni-title">${esc(n.title)}</div><div class="ni-desc">${esc(n.desc)}</div><div class="ni-time">${ago}</div></div></div>`;
+            }).join('');
+        },
+
+        timeAgo(ts){
+            const diff=Date.now()-ts, s=Math.floor(diff/1000);
+            if(s<60)return 'agora';if(s<3600)return Math.floor(s/60)+'min atrás';
+            if(s<86400)return Math.floor(s/3600)+'h atrás';return Math.floor(s/86400)+'d atrás';
+        },
+
+        // Check if should show end-of-month notification
+        async checkMonthlyReminder(){
+            if(!this.prefs.resumoMes) return;
+            const today = new Date();
+            const day = today.getDate();
+            const key = 'notif_month_' + today.getFullYear() + '_' + today.getMonth();
+            if(day >= 28 && !localStorage.getItem(key)){
+                localStorage.setItem(key, '1');
+                this.sendNotification(
+                    '📊 Resumo do Mês',
+                    'O mês está acabando! Veja o resumo das suas finanças.',
+                    'monthly-summary'
+                );
+            }
+        },
+
+        // Check spending alerts
+        async checkSpendingAlert(){
+            if(!this.prefs.alertaGasto || !summary) return;
+            const today = new Date();
+            const dayOfMonth = today.getDate();
+            const daysInMonth = new Date(today.getFullYear(), today.getMonth()+1, 0).getDate();
+            const pctMonth = dayOfMonth / daysInMonth;
+            // If spent more than expected proportionally
+            if(summary.total_renda > 0 && summary.total_gasto > 0){
+                const spendRatio = summary.total_gasto / summary.total_renda;
+                const key = 'notif_spend_' + today.toISOString().slice(0,10);
+                if(spendRatio > 0.8 && pctMonth < 0.9 && !localStorage.getItem(key)){
+                    localStorage.setItem(key, '1');
+                    this.sendNotification(
+                        '⚠️ Alerta de Gastos',
+                        `Você já gastou ${Math.round(spendRatio*100)}% da sua renda este mês.`,
+                        'spending-alert'
+                    );
+                }
+            }
+        },
+
+        // Check savings goal
+        async checkSavingsGoal(){
+            if(!this.prefs.metaEconomia || !summary) return;
+            const meta = this.prefs.metaValor || 500;
+            const saved = (summary.total_renda||0) - (summary.total_gasto||0);
+            const today = new Date();
+            const key = 'notif_meta_' + today.getFullYear() + '_' + today.getMonth();
+            if(saved >= meta && !localStorage.getItem(key)){
+                localStorage.setItem(key, '1');
+                this.sendNotification(
+                    '🎯 Meta de Economia Atingida!',
+                    `Parabéns! Você economizou ${fmt(saved)} este mês.`,
+                    'savings-goal'
+                );
+            }
+        },
+
+        // Daily reminder
+        checkDailyReminder(){
+            if(!this.prefs.lembreteDiario) return;
+            const today = new Date().toISOString().slice(0,10);
+            const key = 'notif_daily_' + today;
+            // Only remind after 18:00
+            if(new Date().getHours() >= 18 && !localStorage.getItem(key)){
+                localStorage.setItem(key, '1');
+                this.sendNotification(
+                    '📝 Lembrete Diário',
+                    'Não esqueça de registrar seus gastos de hoje!',
+                    'daily-reminder'
+                );
+            }
+        },
+
+        init(){
+            this.updatePermUI();
+            this.renderHistory();
+            // Load toggles
+            $('notifResumoMes').checked = this.prefs.resumoMes;
+            $('notifAlertaGasto').checked = this.prefs.alertaGasto;
+            $('notifLembreteDiario').checked = this.prefs.lembreteDiario;
+            $('notifMetaEconomia').checked = this.prefs.metaEconomia;
+            $('metaEcoVal').value = this.prefs.metaValor || 500;
+            $('metaEcoBlock').style.display = this.prefs.metaEconomia ? '' : 'none';
+            // Show dot if unread
+            const lastSeen = parseInt(localStorage.getItem('notif_last_seen')||'0');
+            if(this.history.length && this.history[0].time > lastSeen){
+                $('notifDot').style.display='';
+            }
+            // Run checks
+            setTimeout(()=>{
+                this.checkMonthlyReminder();
+                this.checkSpendingAlert();
+                this.checkSavingsGoal();
+                this.checkDailyReminder();
+            }, 5000);
+        }
+    };
+
+    // Notification UI handlers
+    $('btnNotif').onclick = () => { $('notifModal').classList.add('open'); localStorage.setItem('notif_last_seen', Date.now().toString()); $('notifDot').style.display='none'; };
+    $('notifClose').onclick = () => $('notifModal').classList.remove('open');
+    $('notifModal').onclick = e => { if(e.target===$('notifModal')) $('notifModal').classList.remove('open'); };
+    $('btnEnableNotif').onclick = () => NotifSystem.requestPermission();
+    $('navNotifSettings').onclick = e => { e.preventDefault(); closeSidebar(); $('notifModal').classList.add('open'); };
+
+    ['notifResumoMes','notifAlertaGasto','notifLembreteDiario','notifMetaEconomia'].forEach(id=>{
+        $(id).onchange = () => {
+            NotifSystem.prefs.resumoMes = $('notifResumoMes').checked;
+            NotifSystem.prefs.alertaGasto = $('notifAlertaGasto').checked;
+            NotifSystem.prefs.lembreteDiario = $('notifLembreteDiario').checked;
+            NotifSystem.prefs.metaEconomia = $('notifMetaEconomia').checked;
+            $('metaEcoBlock').style.display = NotifSystem.prefs.metaEconomia ? '' : 'none';
+            NotifSystem.save();
+        };
+    });
+    $('btnSaveMeta').onclick = () => {
+        const v = parseFloat($('metaEcoVal').value);
+        if(v>0){ NotifSystem.prefs.metaValor=v; NotifSystem.save(); toast('Meta salva: '+fmt(v)); }
+    };
+
+    NotifSystem.init();
+
+    /* ═══ MONTHLY SUMMARY ═══ */
+    let monthlyChart = null;
+    let currentMonthOffset = 0; // 0 = current month, -1 = last month, etc.
+
+    function getTargetMonth(offset){
+        const d = new Date();
+        d.setMonth(d.getMonth() + offset);
+        return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    }
+
+    async function openMonthlySummary(){
+        $('monthlyModal').classList.add('open');
+        await loadMonthlySummary();
+    }
+
+    async function loadMonthlySummary(){
+        const mes = getTargetMonth(currentMonthOffset);
+        $('monthlyTitle').textContent = 'Carregando…';
+        try {
+            let data;
+            if(navigator.onLine){
+                data = await api('/summary/monthly?mes=' + mes);
+            } else {
+                // Offline fallback: compute from local
+                data = computeLocalMonthlySummary(mes);
+            }
+            renderMonthlySummary(data);
+        } catch(e){
+            // Fallback
+            const data = computeLocalMonthlySummary(mes);
+            renderMonthlySummary(data);
+        }
+    }
+
+    function computeLocalMonthlySummary(mes){
+        const txMes = (allTx||[]).filter(t=>(t.data||'').slice(0,7)===mes);
+        const [y,m]=mes.split('-').map(Number);
+        const pm = m===1?12:m-1, py = m===1?y-1:y;
+        const prevMes = py+'-'+String(pm).padStart(2,'0');
+        const txPrev = (allTx||[]).filter(t=>(t.data||'').slice(0,7)===prevMes);
+        function calc(txs){
+            let r=0,g=0;const cg={},cr={},daily={};
+            txs.forEach(t=>{
+                const d=(t.data||'').slice(0,10),cat=t.categoria||'Outros';
+                if(!daily[d])daily[d]={renda:0,gasto:0};
+                if(t.tipo==='renda'){r+=t.valor;daily[d].renda+=t.valor;cr[cat]=(cr[cat]||0)+t.valor}
+                else{g+=t.valor;daily[d].gasto+=t.valor;cg[cat]=(cg[cat]||0)+t.valor}
+            });
+            return{total_renda:r,total_gasto:g,saldo:r-g,num_transacoes:txs.length,
+                taxa_economia:r>0?Math.round((r-g)/r*100*10)/10:0,
+                categorias_gasto:Object.entries(cg).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({nome:k,valor:v})),
+                diario:Object.entries(daily).sort().map(([k,v])=>({dia:k,...v}))};
+        }
+        const atual=calc(txMes),anterior=calc(txPrev);
+        const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+        return{
+            mes,mes_nome:MESES[m-1]+' '+y,
+            atual:{...atual,media_diaria_gasto:0},anterior:{total_renda:anterior.total_renda,total_gasto:anterior.total_gasto,saldo:anterior.saldo},
+            comparacao:{var_renda_pct:anterior.total_renda>0?Math.round((atual.total_renda-anterior.total_renda)/anterior.total_renda*1000)/10:0,
+                var_gasto_pct:anterior.total_gasto>0?Math.round((atual.total_gasto-anterior.total_gasto)/anterior.total_gasto*1000)/10:0,
+                var_saldo:Math.round((atual.saldo-anterior.saldo)*100)/100},
+            score_financeiro:50,dicas:['✅ Resumo calculado offline'],maior_gasto:null,maior_renda:null
+        };
+    }
+
+    function renderMonthlySummary(d){
+        if(!d)return;
+        $('monthlyTitle').textContent = d.mes_nome;
+        // Score
+        const score = d.score_financeiro||0;
+        const cls = score<30?'score-low':score<50?'score-mid':score<75?'score-high':'score-great';
+        $('scoreVal').textContent = score;
+        $('scoreVal').className = cls;
+        $('scoreArc').setAttribute('stroke-dasharray', score+', 100');
+        $('scoreArc').setAttribute('stroke', score<30?'var(--red)':score<50?'var(--amber)':score<75?'var(--green)':'var(--primary)');
+        // Cards
+        const a = d.atual||{};
+        $('mRenda').textContent = fmt(a.total_renda||0);
+        $('mGasto').textContent = fmt(a.total_gasto||0);
+        $('mSaldo').textContent = fmt(a.saldo||0);
+        $('mSaldo').style.color = (a.saldo||0)>=0?'var(--green)':'var(--red)';
+        $('mEconomia').textContent = (a.taxa_economia||0)+'%';
+        // Variação
+        const c = d.comparacao||{};
+        $('mRendaVar').innerHTML = varTag(c.var_renda_pct);
+        $('mGastoVar').innerHTML = varTag(c.var_gasto_pct, true);
+        // Dicas
+        $('mDicas').innerHTML = (d.dicas||[]).map(t=>'<div class="dica-card">'+esc(t)+'</div>').join('');
+        // Chart daily
+        renderMonthlyChart(a.diario);
+        // Top cats
+        renderMonthlyCats(a.categorias_gasto, a.total_gasto);
+    }
+
+    function varTag(pct, invert){
+        if(pct===0||pct===undefined) return '<span style="color:var(--text3)">— sem comparação</span>';
+        const up = invert ? pct < 0 : pct > 0;
+        const color = up ? 'var(--green)' : 'var(--red)';
+        const icon = pct>0?'bi-arrow-up-short':'bi-arrow-down-short';
+        return `<span style="color:${color}"><i class="bi ${icon}"></i>${Math.abs(pct)}% vs mês anterior</span>`;
+    }
+
+    function renderMonthlyChart(daily){
+        const ctx=$('chartMonthly').getContext('2d');
+        if(monthlyChart)monthlyChart.destroy();
+        if(!daily||!daily.length){monthlyChart=null;return}
+        const labels=daily.map(d=>{const p=d.dia.split('-');return p[2]+'/'+p[1]});
+        monthlyChart=new Chart(ctx,{type:'bar',data:{labels,datasets:[
+            {label:'Gastos',data:daily.map(d=>d.gasto),backgroundColor:'rgba(239,68,68,.6)',borderRadius:3,barPercentage:.6},
+            {label:'Rendas',data:daily.map(d=>d.renda),backgroundColor:'rgba(34,197,94,.6)',borderRadius:3,barPercentage:.6}
+        ]},options:{responsive:true,maintainAspectRatio:false,
+            scales:{x:{ticks:{color:CC.text,font:{size:8},maxTicksLimit:15},grid:{display:false}},y:{ticks:{color:CC.text,callback:v=>v>=1000?(v/1000)+'k':v,font:{size:9}},grid:{color:CC.grid}}},
+            plugins:{legend:{labels:{color:CC.text,padding:6,font:{size:9},usePointStyle:true,pointStyle:'circle'}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${fmt(c.raw)}`}}}}});
+    }
+
+    function renderMonthlyCats(cats, total){
+        if(!cats||!cats.length){$('mTopCats').innerHTML='';return}
+        $('mTopCats').innerHTML='<div style="font-size:.8rem;font-weight:600;margin-bottom:.3rem">Categorias de Gasto</div>'+
+            cats.slice(0,6).map(c=>{
+                const pct=total>0?Math.round(c.valor/total*100):0;
+                const idx=cats.indexOf(c);
+                return `<div class="cat-bar"><span class="cat-bar-label">${esc(c.nome)}</span><div style="flex:1;background:var(--border);border-radius:3px;height:6px"><div class="cat-bar-fill" style="width:${pct}%;background:${COLORS[idx%COLORS.length]}"></div></div><span class="cat-bar-val">${fmt(c.valor)} (${pct}%)</span></div>`;
+            }).join('');
+    }
+
+    $('btnMonthly').onclick = () => openMonthlySummary();
+    $('navMonthly').onclick = e => { e.preventDefault(); closeSidebar(); openMonthlySummary(); };
+    $('monthlyClose').onclick = () => $('monthlyModal').classList.remove('open');
+    $('monthlyModal').onclick = e => { if(e.target===$('monthlyModal')) $('monthlyModal').classList.remove('open'); };
+    $('monthPrev').onclick = () => { currentMonthOffset--; loadMonthlySummary(); };
+    $('monthNext').onclick = () => { if(currentMonthOffset<0){ currentMonthOffset++; loadMonthlySummary(); } };
+
     </script>
 </body>
 </html>

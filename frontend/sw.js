@@ -1,5 +1,5 @@
-// Service Worker v6 — Offline-first com cache robusto
-const CACHE_NAME = 'dashboard-fin-v6';
+// Service Worker v7 — Offline-first com cache robusto + Notificações
+const CACHE_NAME = 'dashboard-fin-v7';
 const STATIC_ASSETS = [
     './',
     './dashboard.html',
@@ -96,4 +96,22 @@ self.addEventListener('sync', event => {
 
 self.addEventListener('message', event => {
     if (event.data === 'SKIP_WAITING') self.skipWaiting();
+});
+
+// Handle notification click — open dashboard
+self.addEventListener('notificationclick', event => {
+    event.notification.close();
+    const url = event.notification.data && event.notification.data.url
+        ? event.notification.data.url
+        : 'dashboard.html';
+    event.waitUntil(
+        self.clients.matchAll({type: 'window', includeUncontrolled: true}).then(clients => {
+            for (const client of clients) {
+                if (client.url.includes('dashboard') && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            return self.clients.openWindow(url);
+        })
+    );
 });
